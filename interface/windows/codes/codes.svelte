@@ -115,7 +115,7 @@
 	{/if}
 
 	<div class="content codes-content mx-auto grid grid-cols-1 card2:grid-cols-2 card3:grid-cols-3 gap-3.5 sm:gap-4 md:gap-5 rounded-2xl p-1 sm:p-2 md:p-4 w-full">
-		{#if !$hasCodesStore}
+		{#if !$hasCodesStore && !$isCodesLoading}
 			<div class="importCodes col-span-full transparent-800 w-full max-w-2xl mx-auto rounded-2xl p-6 sm:p-8 text-center my-4">
 				<h2>{language.codes.importCodes}</h2>
 				<h3>{language.codes.importCodesText}</h3>
@@ -130,6 +130,21 @@
 					</button>
 				</div>
 			</div>
+		{/if}
+
+		{#if $isCodesLoading && $hasCodesStore && $codeCardsCount === 0}
+			{#each [1, 2, 3, 4] as _}
+				<div class="transparent-800 w-full rounded-2xl p-3.5 sm:p-4 border border-slate-200/50 dark:border-white/10 shadow-lg animate-pulse min-h-[96px] flex items-center justify-between pointer-events-none">
+					<div class="flex items-center gap-3">
+						<div class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-slate-200/80 dark:bg-slate-700/60 flex-shrink-0"></div>
+						<div class="space-y-2">
+							<div class="w-28 sm:w-36 h-4 rounded-md bg-slate-200/80 dark:bg-slate-700/70"></div>
+							<div class="w-20 sm:w-28 h-3 rounded-md bg-slate-200/50 dark:bg-slate-700/40"></div>
+						</div>
+					</div>
+					<div class="w-24 sm:w-28 h-7 rounded-xl bg-slate-200/80 dark:bg-slate-700/60"></div>
+				</div>
+			{/each}
 		{/if}
 
 		<div class="noSearchResults col-span-full transparent-800 hidden w-full max-w-2xl mx-auto rounded-2xl p-8 text-center border border-slate-200/80 dark:border-slate-700/60 shadow-lg">
@@ -149,7 +164,7 @@
 <script lang="ts">
 	import { onMount, onDestroy } from "svelte"
 	import { router } from "@baileyherbert/tinro"
-	import { stopCodesRefresher, search, clearSearch, loadCodes, availableCodeCategories, activeCodeCategory, setCodesCategory, hasCodesStore } from "./index"
+	import { stopCodesRefresher, search, clearSearch, loadCodes, availableCodeCategories, activeCodeCategory, setCodesCategory, hasCodesStore, isCodesLoading, codeCardsCount } from "./index"
 	import { navigate } from "../../utils/navigate"
 	import { getLanguage, currentLanguage } from "@utils/language"
 	import { state } from "../../stores/state"

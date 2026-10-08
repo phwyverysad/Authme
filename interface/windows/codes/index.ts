@@ -21,9 +21,20 @@ export interface CodeCategory {
 	iconUrl?: string
 }
 
+const initialVaultHasCodes = (): boolean => {
+	try {
+		const s = getSettings()
+		return Boolean(s?.vault?.codes && s.vault.codes.trim() !== "")
+	} catch {
+		return false
+	}
+}
+
 export const activeCodeCategory = writable<string>("all")
 export const availableCodeCategories = writable<CodeCategory[]>([])
-export const hasCodesStore = writable<boolean>(false)
+export const hasCodesStore = writable<boolean>(initialVaultHasCodes())
+export const isCodesLoading = writable<boolean>(initialVaultHasCodes())
+export const codeCardsCount = writable<number>(0)
 
 // Keep category names synchronized with language store
 currentLanguage.subscribe((curLang) => {
@@ -314,12 +325,14 @@ export const generateCodeElements = (codes: LibImportFile) => {
 
 	if (!names || names.length === 0) {
 		hasCodesStore.set(false)
+		codeCardsCount.set(0)
 		availableCodeCategories.set([])
 		if (importEl) importEl.style.display = "block"
 		if (searchEl) searchEl.style.display = "none"
 		return
 	}
 	hasCodesStore.set(true)
+	codeCardsCount.set(names.length)
 
 	// Dynamically build available categories
 	const catCounts: Record<string, { name: string; count: number }> = {}
@@ -1321,6 +1334,7 @@ export const generateCodeElements = (codes: LibImportFile) => {
 	}
 
 	generate()
+	refreshCodes(secrets)
 
 	// Save newly imported codes
 	const currentState = getState()
@@ -1328,6 +1342,9 @@ export const generateCodeElements = (codes: LibImportFile) => {
 		saveCodes().catch((err) => logger.error("saveCodes failed: " + err))
 	}
 
+	if (codesRefresher) {
+		clearInterval(codesRefresher)
+	}
 	codesRefresher = setInterval(() => {
 		try {
 			refreshCodes(secrets)
@@ -1430,6 +1447,7 @@ export const invalidateVaultCache = () => {
 	cachedDecryptedVault = null
 	cachedEncryptedVault = null
 	cachedSortSetting = null
+	preloadPromise = null
 }
 
 export const clearCodesMemory = () => {
@@ -1701,14 +1719,51 @@ let cachedDecryptedVault: string | null = null
 let cachedEncryptedVault: string | null = null
 let cachedSortSetting: number | null = null
 let inFlightLoadCodesPromise: Promise<void> | null = null
+let preloadPromise: Promise<void> | null = null
+
+export const preloadCodes = async (): Promise<void> => {
+	if (preloadPromise) return preloadPromise
+	const currentSettings = getSettings()
+	if (!currentSettings.vault?.codes || currentSettings.vault.codes.trim() === "") {
+		isCodesLoading.set(false)
+		return
+	}
+
+	preloadPromise = (async () => {
+		try {
+			isCodesLoading.set(true)
+			if (currentSettings.security?.requireAuthentication === false) {
+				await setEncryptionKey()
+			}
+			if (currentSettings.vault?.codes) {
+				if (cachedEncryptedVault !== currentSettings.vault.codes || cachedDecryptedVault === null) {
+					const decryptedText = await decryptData(currentSettings.vault.codes)
+					if (decryptedText && decryptedText !== "error") {
+						cachedEncryptedVault = currentSettings.vault.codes
+						cachedDecryptedVault = decryptedText
+						cachedSortSetting = currentSettings.settings.sortCodes
+						currentCodesData = textConverter(decryptedText, currentSettings.settings.sortCodes)
+					}
+				}
+			}
+		} catch (e) {
+			logger.error("preloadCodes error: " + e)
+		}
+	})()
+	return preloadPromise
+}
 
 export const loadCodes = async (): Promise<void> => {
 	if (inFlightLoadCodesPromise) return inFlightLoadCodesPromise
+	if (preloadPromise) {
+		await preloadPromise
+	}
 	inFlightLoadCodesPromise = (async () => {
 		try {
 			await executeLoadCodes()
 		} finally {
 			inFlightLoadCodesPromise = null
+			isCodesLoading.set(false)
 		}
 	})()
 	return inFlightLoadCodesPromise

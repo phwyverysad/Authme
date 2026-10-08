@@ -13,6 +13,7 @@ import { optionalAnalyticsPayload } from "interface/utils/analytics"
 import { checkForUpdate } from "interface/utils/update"
 import logger from "interface/utils/logger"
 import posthog from "posthog-js"
+import { generateCodeElements, preloadCodes } from "../windows/codes/index"
 
 const settings = getSettings()
 const state = getState()
@@ -22,12 +23,12 @@ applyTheme(settings?.settings?.theme ?? 0)
 
 // Pre-determine authentication & initial route synchronously to prevent initial render warp
 if (settings.security?.requireAuthentication === false) {
-	setEncryptionKey().catch(() => {})
 	if (!state.authenticated) {
 		state.authenticated = true
 		setState(state)
 	}
 	router.goto("/codes")
+	preloadCodes().catch(() => {})
 } else if (settings.security?.password) {
 	router.goto("/confirm")
 }
@@ -46,7 +47,6 @@ const app = new App({
 })
 
 import { getServiceIcon, fetchBrandIcon } from "../utils/icons"
-import { generateCodeElements } from "../windows/codes/index"
 
 if (typeof window !== "undefined") {
 	;(window as any).__authme_icons = { getServiceIcon, fetchBrandIcon }

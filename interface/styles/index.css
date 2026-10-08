@@ -379,7 +379,15 @@ html.light .menuButton:hover {
 html.light .select {
 	background-color: #ffffff;
 	color: #0f172a;
-	border: 1px solid #cbd5e1;
+	border: 1px solid #e2e8f0;
+	border-radius: 1rem !important;
+	box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="light"] .select:hover,
+html.light .select:hover {
+	background-color: #f8fafc;
+	border-color: #cbd5e1;
 }
 
 [data-theme="light"] .edit,
