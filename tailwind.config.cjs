@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+	darkMode: "class",
 	content: ["./interface/**/*.{svelte,ts,js}"],
 	theme: {
 		extend: {
@@ -31,8 +32,9 @@ module.exports = {
 			},
 
 			screens: {
-				sm: { max: "1650px" },
-				small: { min: "1200px" },
+				xs: "480px",
+				card2: "1060px",
+				card3: "1540px",
 			},
 		},
 	},

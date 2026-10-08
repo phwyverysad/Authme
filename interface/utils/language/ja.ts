@@ -1,6 +1,6 @@
 import { localeEN } from "@utils/language/en"
 
-export const localeJA: typeof localeEN = {
+export const localeJA = {
 	common: {
 		confirm: "確認",
 		continue: "続行",
@@ -169,6 +169,10 @@ export const localeJA: typeof localeEN = {
 		clearData: "データを消去",
 		clearDataText: "パスワード、2FA コード、その他すべての設定を消去します。これは元に戻すことはできませんのでご注意ください！",
 		clearDataButton: "データを消去",
+		theme: "テーマ",
+		themeText: "ダークモードまたはライトモードを選択します。",
+		darkTheme: "ダーク",
+		lightTheme: "ライト",
 		codes: "コード",
 		codesDescription: "コードの説明",
 		codesDescriptionText: "2FA コードの説明が表示されます。クリックでコピーできます。",

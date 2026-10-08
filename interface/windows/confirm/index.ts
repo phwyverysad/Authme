@@ -1,18 +1,23 @@
 import { navigate } from "../../utils/navigate"
 import { getSettings } from "../../stores/settings"
 import { invoke } from "@tauri-apps/api/core"
-import * as dialog from "@tauri-apps/plugin-dialog"
+import * as dialog from "interface/utils/dialog"
 import { getState, setState } from "../../stores/state"
 import { sendEncryptionKey, verifyWebAuthnLogin } from "interface/utils/encryption"
 import { decodeBase64 } from "@utils/convert"
-import { getLanguage } from "@utils/language"
-
-const language = getLanguage()
+import { getLanguage, language } from "@utils/language"
 
 export const confirmPassword = async () => {
 	const settings = getSettings()
 	const state = getState()
-	const input = document.querySelector(".passwordInput").value
+	const inputEl = document.querySelector(".passwordInput") as HTMLInputElement | null
+	if (!inputEl) return
+	const input = inputEl.value || ""
+
+	if (!settings.security?.password) {
+		dialog.message(language.confirm.dialog.wrongPassword, { kind: "error" })
+		return
+	}
 
 	const result = await invoke("verify_password", { password: input, hash: decodeBase64(settings.security.password) })
 
@@ -37,17 +42,22 @@ export const confirmPassword = async () => {
 }
 
 export const showPassword = () => {
-	const inputState = document.querySelector(".passwordInput").getAttribute("type")
+	const inputEl = document.querySelector(".passwordInput") as HTMLInputElement | null
+	if (!inputEl) return
+
+	const inputState = inputEl.getAttribute("type")
+	const showEl = document.querySelector(".showPassword") as HTMLElement | null
+	const hideEl = document.querySelector(".hidePassword") as HTMLElement | null
 
 	if (inputState === "password") {
-		document.querySelector(".showPassword").style.display = "none"
-		document.querySelector(".hidePassword").style.display = "block"
+		if (showEl) showEl.style.display = "none"
+		if (hideEl) hideEl.style.display = "block"
 
-		document.querySelector(".passwordInput").setAttribute("type", "text")
+		inputEl.setAttribute("type", "text")
 	} else {
-		document.querySelector(".showPassword").style.display = "block"
-		document.querySelector(".hidePassword").style.display = "none"
+		if (showEl) showEl.style.display = "block"
+		if (hideEl) hideEl.style.display = "none"
 
-		document.querySelector(".passwordInput").setAttribute("type", "password")
+		inputEl.setAttribute("type", "password")
 	}
 }

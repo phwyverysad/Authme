@@ -1,0 +1,16 @@
+[package]
+name = "authme_extensions"
+version = "1.0.0"
+edition = "2021"
+description = "Authme native extension DLL containing Mail, Authenticator, TOTP, and Window modules"
+license = "GPL-3.0"
+
+[lib]
+name = "authme_extensions"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+google_authenticator_converter = { path = "../google_authenticator_converter" }
+serde_json = "1.0"
+serde = { version = "1", features = ["derive"] }
+regex = "1.10"

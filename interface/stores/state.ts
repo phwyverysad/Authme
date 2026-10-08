@@ -7,12 +7,43 @@ const defaultState: LibState = {
 	searchHistory: "",
 }
 
-export const state = writable<LibState>(sessionStorage.state ? JSON.parse(sessionStorage.state) : defaultState)
+const parseState = (): LibState => {
+	try {
+		if (typeof sessionStorage !== "undefined") {
+			const raw = sessionStorage.getItem("state") || (sessionStorage as any).state
+			if (raw) {
+				const parsed = JSON.parse(raw)
+				if (parsed && typeof parsed === "object") {
+					return { ...defaultState, ...parsed }
+				}
+			}
+		}
+	} catch (e) {
+		console.error("Failed to parse state:", e)
+	}
+	return defaultState
+}
+
+export const state = writable<LibState>(parseState())
 
 state.subscribe((data) => {
-	console.log("State changed: ", data)
+	if (typeof window !== "undefined" && (window as any).__AUTHME_DEBUG__) {
+		const sanitized = {
+			...data,
+			importData: data.importData ? "[REDACTED]" : null,
+		}
+		console.log("State changed: ", sanitized)
+	}
 
-	sessionStorage.setItem("state", JSON.stringify(data))
+	try {
+		if (typeof sessionStorage !== "undefined") {
+			const json = JSON.stringify(data)
+			sessionStorage.setItem("state", json)
+			try {
+				;(sessionStorage as any).state = json
+			} catch {}
+		}
+	} catch {}
 })
 
 export const getState = (): LibState => {
@@ -22,3 +53,4 @@ export const getState = (): LibState => {
 export const setState = (newState: LibState) => {
 	state.set(newState)
 }
+

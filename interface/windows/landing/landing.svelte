@@ -104,9 +104,10 @@
 	import Details from "../../components/details.svelte"
 	import { settings } from "interface/stores/settings"
 	import { onMount } from "svelte"
-	import { getLanguage } from "@utils/language"
+	import { getLanguage, currentLanguage } from "@utils/language"
 
-	const language = getLanguage()
+	let language = getLanguage()
+	$: language = $currentLanguage || getLanguage()
 
 	onMount(() => {
 		appController()

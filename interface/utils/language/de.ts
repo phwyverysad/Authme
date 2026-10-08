@@ -1,6 +1,6 @@
 import { localeEN } from "@utils/language/en"
 
-export const localeDE: typeof localeEN = {
+export const localeDE = {
 	common: {
 		confirm: "Bestätigen",
 		continue: "Weiter",
@@ -169,6 +169,10 @@ export const localeDE: typeof localeEN = {
 		clearData: "Daten löschen",
 		clearDataText: "Löscht Passwort, 2FA-Codes und alle anderen Einstellungen. Seien Sie vorsichtig, dies kann nicht rückgängig gemacht werden!",
 		clearDataButton: "Daten löschen",
+		theme: "Design",
+		themeText: "Erscheinungsbild der App anpassen (Dunkel / Hell).",
+		darkTheme: "Dunkel",
+		lightTheme: "Hell",
 		codes: "Codes",
 		codesDescription: "Codes-Beschreibung",
 		codesDescriptionText: "Die Beschreibung der 2FA-Codes anzeigen. Sie können sie nach dem Anklicken kopieren.",

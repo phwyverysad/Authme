@@ -1,8 +1,3 @@
 {
-	"$schema": "https://schema.tauri.app/config/2",
-	"bundle": {
-		"windows": {
-			"signCommand": "trusted-signing-cli %1 -e https://wus2.codesigning.azure.net -a mnr -c Profile3 -d Authme"
-		}
-	}
+	"$schema": "https://schema.tauri.app/config/2"
 }

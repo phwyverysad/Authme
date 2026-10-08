@@ -1,10 +1,16 @@
 import { invoke } from "@tauri-apps/api/core"
-import * as dialog from "@tauri-apps/plugin-dialog"
+import * as dialog from "./dialog"
 import { getState, setState } from "../stores/state"
 import { TOTP } from "otpauth"
 import logger from "./logger"
+import { cleanAccountName } from "./icons"
 
-const state = getState()
+interface ParsedEntry {
+	name: string
+	secret: string
+	issuer: string
+	type: string
+}
 
 /**
  * Convert codes from plain text to arrays
@@ -13,77 +19,109 @@ const state = getState()
  * @return {LibImportFile} Import file structure
  */
 export const textConverter = (text: string, sortNumber: number): LibImportFile => {
-	const data: string[] = []
+	if (!text || text.trim() === "") {
+		return {
+			names: [],
+			secrets: [],
+			issuers: [],
+			types: [],
+			uniqIds: [],
+		}
+	}
+
+	// Normalize text: strip double quotes, split attribute keys on commas if inline, split on lines
+	const lines = text
+		.replace(/"/g, "")
+		.replace(/,\s*(Name|Secret|Issuer|Type)\s*:/gi, "\n$1:")
+		.split(/\r?\n/)
+		.map((l) => l.trim())
+		.filter((l) => l.length > 0)
+
+	const parsedEntries: ParsedEntry[] = []
+	let currentEntry: Partial<ParsedEntry> | null = null
+
+	const flushEntry = () => {
+		if (currentEntry && (currentEntry.name || currentEntry.secret || currentEntry.issuer)) {
+			const name = currentEntry.name || currentEntry.issuer || "Unknown"
+			const rawSecret = (currentEntry.secret || "").replace(/[\s-]+/g, "").toUpperCase()
+			const issuer = currentEntry.issuer || name
+			const type = currentEntry.type || "OTP_TOTP"
+			if (rawSecret) {
+				parsedEntries.push({ name, secret: rawSecret, issuer, type })
+			}
+		}
+		currentEntry = null
+	}
+
+	for (const line of lines) {
+		const nameMatch = line.match(/^Name\s*:\s*(.*)$/i)
+		const secretMatch = line.match(/^Secret\s*:\s*(.*)$/i)
+		const issuerMatch = line.match(/^Issuer\s*:\s*(.*)$/i)
+		const typeMatch = line.match(/^Type\s*:\s*(.*)$/i)
+
+		if (nameMatch) {
+			if (currentEntry && currentEntry.name !== undefined) {
+				flushEntry()
+			}
+			if (!currentEntry) currentEntry = {}
+			currentEntry.name = nameMatch[1].trim()
+		} else if (secretMatch) {
+			if (currentEntry && currentEntry.secret !== undefined) {
+				flushEntry()
+			}
+			if (!currentEntry) currentEntry = {}
+			currentEntry.secret = secretMatch[1].trim()
+		} else if (issuerMatch) {
+			if (currentEntry && currentEntry.issuer !== undefined) {
+				flushEntry()
+			}
+			if (!currentEntry) currentEntry = {}
+			currentEntry.issuer = issuerMatch[1].trim()
+		} else if (typeMatch) {
+			if (currentEntry && currentEntry.type !== undefined) {
+				flushEntry()
+			}
+			if (!currentEntry) currentEntry = {}
+			currentEntry.type = typeMatch[1].trim()
+		}
+	}
+
+	flushEntry()
+
 	const names: string[] = []
 	const secrets: string[] = []
 	const issuers: string[] = []
 	const types: string[] = []
 	const uniqIds: string[] = []
 
-	// remove double quotes, next line, split new lines
-	const convertedText = text.replace(/"/g, "").replace(/,/g, "\n").split(/\n/)
+	for (const entry of parsedEntries) {
+		try {
+			new TOTP({
+				secret: entry.secret,
+			}).generate()
+		} catch (error) {
+			dialog.message("Failed to generate TOTP code from secret. \n\nMake sure your import file is correct!", { kind: "error" })
+			logger.error(`Failed to generate TOTP code from secret: ${error}`)
 
-	// create array
-	while (convertedText.length) {
-		data.push(convertedText.shift())
-	}
+			const currentState = getState()
+			currentState.importData = null
+			setState(currentState)
 
-	// remove first blank line
-	data.splice(0, 1)
-
-	// remove blank strings
-	for (let i = 0; i < data.length; i++) {
-		if (data[i] === "" || data[i] === "\r" || data[i] === "\n" || data[i] === "\r\n") {
-			data.splice(i, 1)
-		}
-	}
-
-	for (let i = 0; i < data.length; i++) {
-		// Push names to array
-		if (data[i].startsWith("Name")) {
-			const name = data[i].slice(8).trim()
-
-			names.push(name)
-		}
-
-		// Push secrets to array
-		if (data[i].startsWith("Secret")) {
-			const secret = data[i].slice(8).trim()
-
-			try {
-				new TOTP({
-					secret,
-				}).generate()
-			} catch (error) {
-				dialog.message("Failed to generate TOTP code from secret. \n\nMake sure your import file is correct!", { kind: "error" })
-				logger.error(`Failed to generate TOTP code from secret: ${error} - ${secret}`)
-
-				state.importData = null
-				setState(state)
-
-				return
+			return {
+				names: [],
+				secrets: [],
+				issuers: [],
+				types: [],
+				uniqIds: [],
 			}
-
-			secrets.push(secret)
 		}
 
-		// Push issuers to array
-		if (data[i].startsWith("Issuer")) {
-			const issuer = data[i].slice(8).trim()
-
-			issuers.push(issuer)
-		}
-
-		// Push types to array
-		if (data[i].startsWith("Type")) {
-			const type = data[i].slice(8).trim()
-
-			types.push(type)
-		}
-	}
-
-	// Assign unique ids to each code
-	for (let i = 0; i < names.length; i++) {
+		const cleanIssuer = (entry.issuer || "").trim()
+		const cleanName = cleanAccountName(entry.name, cleanIssuer)
+		names.push(cleanName)
+		secrets.push(entry.secret)
+		issuers.push(cleanIssuer)
+		types.push(entry.type)
 		uniqIds.push(crypto.randomUUID())
 	}
 
@@ -109,11 +147,11 @@ export const textConverter = (text: string, sortNumber: number): LibImportFile =
 		sortedMap = codesMap
 	}
 
-	const sortedUniqIds = []
-	const sortedNames = []
-	const sortedSecrets = []
-	const sortedIssuers = []
-	const sortedTypes = []
+	const sortedUniqIds: string[] = []
+	const sortedNames: string[] = []
+	const sortedSecrets: string[] = []
+	const sortedIssuers: string[] = []
+	const sortedTypes: string[] = []
 	sortedMap.forEach((value, key) => {
 		sortedUniqIds.push(key)
 		sortedNames.push(value.name)
@@ -140,7 +178,7 @@ export const totpImageConverter = (data: string): string => {
 	const uri = new URL(data)
 
 	// get name
-	const name = decodeURIComponent(uri.pathname.slice(1))
+	const rawLabel = decodeURIComponent(uri.pathname.slice(1))
 
 	// get secret
 	const secret = uri.searchParams.get("secret")
@@ -148,10 +186,25 @@ export const totpImageConverter = (data: string): string => {
 	// get issuer
 	let issuer = uri.searchParams.get("issuer")
 
+	let name = rawLabel
+	if (rawLabel.includes(":")) {
+		const parts = rawLabel.split(":")
+		const prefix = parts[0].trim()
+		const remainder = parts.slice(1).join(":").trim()
+		if (!issuer || issuer === "" || issuer === null) {
+			issuer = prefix
+		}
+		if (remainder) {
+			name = remainder
+		}
+	}
+
 	// check if issuer is empty
 	if (issuer === "" || issuer === null) {
 		issuer = name
 	}
+
+	name = cleanAccountName(name, issuer)
 
 	// add to final string
 	return `\nName:   ${name} \nSecret: ${secret} \nIssuer: ${issuer} \nType:   OTP_TOTP\n`
@@ -175,7 +228,9 @@ export const migrationImageConverter = async (data: string): Promise<string> => 
 
 	// make a string
 	decoded.forEach((element) => {
-		const tempString = `\nName:   ${element.name} \nSecret: ${element.secret} \nIssuer: ${element.issuer} \nType:   OTP_TOTP\n`
+		const cleanIssuer = (element.issuer || "").trim()
+		const cleanName = cleanAccountName(element.name, cleanIssuer)
+		const tempString = `\nName:   ${cleanName} \nSecret: ${element.secret} \nIssuer: ${cleanIssuer || cleanName} \nType:   OTP_TOTP\n`
 		returnString += tempString
 	})
 
@@ -198,19 +253,46 @@ export const markdownConverter = (text: string) => {
 /**
  * Convert base64 to text
  */
-export const decodeBase64 = (text: string) => {
-	return new TextDecoder().decode(
-		new Uint8Array(
-			atob(text)
-				.split("")
-				.map((c) => c.charCodeAt(0))
-		)
-	)
+export const decodeBase64 = (text: string): string => {
+	if (!text) return ""
+	try {
+		const binary = atob(text)
+		const bytes = new Uint8Array(binary.length)
+		for (let i = 0; i < binary.length; i++) {
+			bytes[i] = binary.charCodeAt(i)
+		}
+		return new TextDecoder().decode(bytes)
+	} catch (e) {
+		logger.warn(`Failed to decode base64 string: ${e}`)
+		return text
+	}
 }
 
 /**
- * Convert text to base64
+ * Convert text to base64 safely without call stack overflow
  */
-export const encodeBase64 = (text: string) => {
-	return btoa(String.fromCharCode(...new TextEncoder().encode(text)))
+export const encodeBase64 = (text: string): string => {
+	if (!text) return ""
+	const bytes = new TextEncoder().encode(text)
+	let binary = ""
+	const len = bytes.byteLength
+	const chunkSize = 0x2000 // 8192
+	for (let i = 0; i < len; i += chunkSize) {
+		binary += String.fromCharCode(...bytes.subarray(i, Math.min(i + chunkSize, len)))
+	}
+	return btoa(binary)
+}
+
+/**
+ * Convert raw bytes (ArrayBuffer or Uint8Array) to base64 safely without UTF-8 corruption
+ */
+export const encodeBytesToBase64 = (buffer: ArrayBuffer | Uint8Array): string => {
+	const bytes = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer)
+	let binary = ""
+	const len = bytes.byteLength
+	const chunkSize = 0x2000 // 8192
+	for (let i = 0; i < len; i += chunkSize) {
+		binary += String.fromCharCode(...bytes.subarray(i, Math.min(i + chunkSize, len)))
+	}
+	return btoa(binary)
 }

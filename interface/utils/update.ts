@@ -1,5 +1,5 @@
 import { relaunch } from "@tauri-apps/plugin-process"
-import * as dialog from "@tauri-apps/plugin-dialog"
+import * as dialog from "./dialog"
 import * as os from "@tauri-apps/plugin-os"
 import { getState, setState } from "interface/stores/state"
 import { dev } from "../../build.json"

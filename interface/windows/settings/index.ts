@@ -5,12 +5,10 @@ import { navigate } from "../../utils/navigate"
 import { deleteEncryptionKey } from "interface/utils/encryption"
 import { getSettings, setSettings } from "interface/stores/settings"
 import * as os from "@tauri-apps/plugin-os"
-import * as dialog from "@tauri-apps/plugin-dialog"
+import * as dialog from "interface/utils/dialog"
 import * as process from "@tauri-apps/plugin-process"
 import * as clipboard from "@tauri-apps/plugin-clipboard-manager"
 import { revealItemInDir } from "@tauri-apps/plugin-opener"
-
-const settings = getSettings()
 
 export interface SystemInfo {
 	osName: string
@@ -77,6 +75,7 @@ export const clearData = async (clearCodesOption: boolean, clearSettingsOption: 
 			return
 		}
 
+		const settings = getSettings()
 		settings.vault.codes = null
 		setSettings(settings)
 
@@ -92,6 +91,7 @@ export const clearData = async (clearCodesOption: boolean, clearSettingsOption: 
 			return
 		}
 
+		const settings = getSettings()
 		settings.settings.language = 0
 		settings.settings.launchOnStartup = true
 		settings.settings.minimizeToTray = true
@@ -137,14 +137,17 @@ export const clearData = async (clearCodesOption: boolean, clearSettingsOption: 
  * Show Clear data dialog
  */
 export const showClearDataDialog = () => {
-	const dialogClearData: LibDialogElement = document.querySelector(".dialogClearData")
+	const dialogClearData: LibDialogElement | null = document.querySelector(".dialogClearData")
 	const closeDialog = document.querySelector(".dialogClearDataClose")
 
-	closeDialog.addEventListener("click", () => {
-		dialogClearData.close()
-	})
+	if (closeDialog && !(closeDialog as any).__authme_listener_attached) {
+		;(closeDialog as any).__authme_listener_attached = true
+		closeDialog.addEventListener("click", () => {
+			dialogClearData?.close()
+		})
+	}
 
-	dialogClearData.showModal()
+	dialogClearData?.showModal()
 }
 
 export const showLogs = async () => {
@@ -152,16 +155,42 @@ export const showLogs = async () => {
 	revealItemInDir(folderPath)
 }
 
-export const launchOnStartup = () => {
-	if (settings.settings.launchOnStartup === true) {
-		invoke("disable_auto_launch")
+export const setLaunchOnStartup = (enabled: boolean) => {
+	const current = getSettings()
+	current.settings.launchOnStartup = enabled
+	setSettings(current)
+	if (enabled) {
+		invoke("enable_auto_launch").catch((e) => console.warn("enable_auto_launch error:", e))
 	} else {
-		invoke("enable_auto_launch")
+		invoke("disable_auto_launch").catch((e) => console.warn("disable_auto_launch error:", e))
 	}
 }
 
-export const toggleWindowCapture = (windowCapture: boolean) => {
-	const appWindow = webviewWindow.getCurrentWebviewWindow()
+export const launchOnStartup = () => {
+	const current = getSettings()
+	setLaunchOnStartup(!current.settings.launchOnStartup)
+}
 
-	appWindow.setContentProtected(windowCapture)
+export const setMinimizeToTray = (enabled: boolean) => {
+	const current = getSettings()
+	current.settings.minimizeToTray = enabled
+	setSettings(current)
+}
+
+export const setRememberWindowPosition = (enabled: boolean) => {
+	const current = getSettings()
+	current.settings.rememberWindowPosition = enabled
+	setSettings(current)
+}
+
+export const setWindowCapture = (enabled: boolean) => {
+	const current = getSettings()
+	current.settings.windowCapture = enabled
+	setSettings(current)
+	const appWindow = webviewWindow.getCurrentWebviewWindow()
+	appWindow.setContentProtected(enabled).catch(() => {})
+}
+
+export const toggleWindowCapture = (windowCapture: boolean) => {
+	setWindowCapture(windowCapture)
 }

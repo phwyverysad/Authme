@@ -6,6 +6,10 @@ license = "MIT"
 description= "Extract name, secret and issuer from a Google Authenticator migration QR code"
 repository = "https://github.com/Levminer/authme/tree/dev/core/crates/google_authenticator_converter"
 
+[lib]
+name = "google_authenticator_converter"
+crate-type = ["cdylib", "rlib"]
+
 [dependencies]
 base32 = "0.4.0"
 base64 = "0.21.0"

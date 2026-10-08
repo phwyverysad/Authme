@@ -7,7 +7,8 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
-		"dev": "node scripts/buildNumber.cjs alpha true && tauri dev",
+		"start": "npm run dev",
+		"dev": "node scripts/buildNumber.cjs release false && tauri dev",
 		"server": "node scripts/server.js",
 		"build": "node scripts/buildNumber.cjs release false && tauri build",
 		"build:alpha": "node scripts/buildNumber.cjs alpha false && tauri build",

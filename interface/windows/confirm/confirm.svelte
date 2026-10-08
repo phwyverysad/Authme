@@ -47,14 +47,16 @@
 	import { onMount } from "svelte"
 	import Details from "../../components/details.svelte"
 	import { confirmPassword, showPassword } from "./index"
-	import { getLanguage } from "@utils/language"
+	import { getLanguage, currentLanguage } from "@utils/language"
 
-	const language = getLanguage()
+	let language = getLanguage()
+	$: language = $currentLanguage || getLanguage()
 
 	onMount(() => {
-		document.querySelector<HTMLInputElement>(".passwordInput").focus()
+		const inputEl = document.querySelector<HTMLInputElement>(".passwordInput")
+		inputEl?.focus()
 
-		document.querySelector<HTMLInputElement>(".passwordInput").addEventListener("keypress", (event) => {
+		inputEl?.addEventListener("keypress", (event) => {
 			if (event.key === "Enter") {
 				confirmPassword()
 			}

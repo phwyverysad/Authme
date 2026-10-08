@@ -38,6 +38,10 @@ declare global {
 	interface LibSearchQuery {
 		name: string
 		description: string
+		rawIssuer?: string
+		rawName?: string
+		originalTitle?: string
+		originalSubtitle?: string
 	}
 
 	interface LibSettings {
@@ -65,6 +69,13 @@ declare global {
 			sortCodes: number
 			/** @deprecated Removed in 6.0.0 */
 			codesLayout: number
+			theme?: number
+			lockTimer?: number
+			rememberWindowPosition?: boolean
+			windowPosition?: { x: number; y: number; width: number; height: number; maximized: boolean }
+			clearClipboard?: number
+			appScale?: number
+			windowCapture?: boolean
 		}
 
 		searchFilter: {

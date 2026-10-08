@@ -1,6 +1,6 @@
 import { localeEN } from "@utils/language/en"
 
-export const localeZH: typeof localeEN = {
+export const localeZH = {
 	common: {
 		confirm: "确认",
 		continue: "继续",
@@ -169,6 +169,10 @@ export const localeZH: typeof localeEN = {
 		clearData: "清理",
 		clearDataText: "清理密码,2FA 代码和其他设置. 请注意,此操作后不可恢复您的数据!",
 		clearDataButton: "清理",
+		theme: "主题",
+		themeText: "选择深色模式或浅色模式。",
+		darkTheme: "深色",
+		lightTheme: "浅色",
 		codes: "代码",
 		codesDescription: "代码说明",
 		codesDescriptionText: "是否显示 2FA 的代码说明. 单击说明将自动复制到剪贴板.",

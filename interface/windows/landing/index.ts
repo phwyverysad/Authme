@@ -2,13 +2,11 @@ import { navigate } from "../../utils/navigate"
 import { getSettings, setSettings } from "../../stores/settings"
 import { getState, setState } from "../../stores/state"
 import { invoke } from "@tauri-apps/api/core"
-import * as dialog from "@tauri-apps/plugin-dialog"
+import * as dialog from "interface/utils/dialog"
 import { setEntry, generateRandomKey, setEncryptionKey, createWebAuthnLogin, verifyWebAuthnLogin } from "interface/utils/encryption"
 import { search } from "interface/utils/password"
-import { encodeBase64 } from "@utils/convert"
-import { getLanguage } from "@utils/language"
-
-const language = getLanguage()
+import { encodeBase64, encodeBytesToBase64 } from "@utils/convert"
+import { getLanguage, language } from "@utils/language"
 
 export const noPassword = async () => {
 	const settings = getSettings()
@@ -29,9 +27,8 @@ export const noPassword = async () => {
 	}
 
 	const key = await generateRandomKey(32)
-	const decoder = new TextDecoder()
 
-	await setEntry("encryptionKey", encodeBase64(decoder.decode(key)))
+	await setEntry("encryptionKey", encodeBytesToBase64(key))
 	await setEncryptionKey()
 
 	settings.security.requireAuthentication = false
@@ -44,15 +41,19 @@ export const noPassword = async () => {
 }
 
 export const requirePassword = () => {
-	document.querySelector(".requirePassword").style.display = "block"
-	document.querySelector(".landing").style.display = "none"
+	const reqEl = document.querySelector(".requirePassword") as HTMLElement | null
+	const landEl = document.querySelector(".landing") as HTMLElement | null
+	if (reqEl) reqEl.style.display = "block"
+	if (landEl) landEl.style.display = "none"
 }
 
 export const createPassword = async () => {
 	const settings = getSettings()
 
-	const input0 = document.querySelector(".passwordInput0")
-	const input1 = document.querySelector(".passwordInput1")
+	const input0 = document.querySelector(".passwordInput0") as HTMLInputElement | null
+	const input1 = document.querySelector(".passwordInput1") as HTMLInputElement | null
+
+	if (!input0 || !input1) return
 
 	if (input0.value !== input1.value) {
 		return dialog.message(language.landing.dialog.passwordsNotMatch, { kind: "error" })
@@ -107,17 +108,22 @@ export const appController = async () => {
 }
 
 export const showPassword = (id: number) => {
-	const inputState = document.querySelector(`.passwordInput${id}`).getAttribute("type")
+	const inputEl = document.querySelector(`.passwordInput${id}`) as HTMLInputElement | null
+	if (!inputEl) return
+
+	const inputState = inputEl.getAttribute("type")
+	const showEl = document.querySelector(`.showPassword${id}`) as HTMLElement | null
+	const hideEl = document.querySelector(`.hidePassword${id}`) as HTMLElement | null
 
 	if (inputState === "password") {
-		document.querySelector(`.showPassword${id}`).style.display = "none"
-		document.querySelector(`.hidePassword${id}`).style.display = "block"
+		if (showEl) showEl.style.display = "none"
+		if (hideEl) hideEl.style.display = "block"
 
-		document.querySelector(`.passwordInput${id}`).setAttribute("type", "text")
+		inputEl.setAttribute("type", "text")
 	} else {
-		document.querySelector(`.showPassword${id}`).style.display = "block"
-		document.querySelector(`.hidePassword${id}`).style.display = "none"
+		if (showEl) showEl.style.display = "block"
+		if (hideEl) hideEl.style.display = "none"
 
-		document.querySelector(`.passwordInput${id}`).setAttribute("type", "password")
+		inputEl.setAttribute("type", "password")
 	}
 }

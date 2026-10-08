@@ -244,13 +244,13 @@ impl ::protobuf::Message for MigrationPayload {
         &mut self.unknown_fields
     }
 
-    fn as_any(&self) -> &dyn (::std::any::Any) {
-        self as &dyn (::std::any::Any)
+    fn as_any(&self) -> &dyn ::std::any::Any {
+        self as &dyn ::std::any::Any
     }
-    fn as_any_mut(&mut self) -> &mut dyn (::std::any::Any) {
-        self as &mut dyn (::std::any::Any)
+    fn as_any_mut(&mut self) -> &mut dyn ::std::any::Any {
+        self as &mut dyn ::std::any::Any
     }
-    fn into_any(self: ::std::boxed::Box<Self>) -> ::std::boxed::Box<dyn (::std::any::Any)> {
+    fn into_any(self: ::std::boxed::Box<Self>) -> ::std::boxed::Box<dyn ::std::any::Any> {
         self
     }
 
@@ -323,7 +323,7 @@ impl ::std::fmt::Debug for MigrationPayload {
 }
 
 impl ::protobuf::reflect::ProtobufValue for MigrationPayload {
-    fn as_ref(&self) -> ::protobuf::reflect::ReflectValueRef {
+    fn as_ref(&self) -> ::protobuf::reflect::ReflectValueRef<'_> {
         ::protobuf::reflect::ReflectValueRef::Message(self)
     }
 }
@@ -607,13 +607,13 @@ impl ::protobuf::Message for MigrationPayload_OtpParameters {
         &mut self.unknown_fields
     }
 
-    fn as_any(&self) -> &dyn (::std::any::Any) {
-        self as &dyn (::std::any::Any)
+    fn as_any(&self) -> &dyn ::std::any::Any {
+        self as &dyn ::std::any::Any
     }
-    fn as_any_mut(&mut self) -> &mut dyn (::std::any::Any) {
-        self as &mut dyn (::std::any::Any)
+    fn as_any_mut(&mut self) -> &mut dyn ::std::any::Any {
+        self as &mut dyn ::std::any::Any
     }
-    fn into_any(self: ::std::boxed::Box<Self>) -> ::std::boxed::Box<dyn (::std::any::Any)> {
+    fn into_any(self: ::std::boxed::Box<Self>) -> ::std::boxed::Box<dyn ::std::any::Any> {
         self
     }
 
@@ -698,7 +698,7 @@ impl ::std::fmt::Debug for MigrationPayload_OtpParameters {
 }
 
 impl ::protobuf::reflect::ProtobufValue for MigrationPayload_OtpParameters {
-    fn as_ref(&self) -> ::protobuf::reflect::ReflectValueRef {
+    fn as_ref(&self) -> ::protobuf::reflect::ReflectValueRef<'_> {
         ::protobuf::reflect::ReflectValueRef::Message(self)
     }
 }
@@ -748,7 +748,7 @@ impl ::std::default::Default for MigrationPayload_Algorithm {
 }
 
 impl ::protobuf::reflect::ProtobufValue for MigrationPayload_Algorithm {
-    fn as_ref(&self) -> ::protobuf::reflect::ReflectValueRef {
+    fn as_ref(&self) -> ::protobuf::reflect::ReflectValueRef<'_> {
         ::protobuf::reflect::ReflectValueRef::Enum(::protobuf::ProtobufEnum::descriptor(self))
     }
 }
@@ -801,7 +801,7 @@ impl ::std::default::Default for MigrationPayload_OtpType {
 }
 
 impl ::protobuf::reflect::ProtobufValue for MigrationPayload_OtpType {
-    fn as_ref(&self) -> ::protobuf::reflect::ReflectValueRef {
+    fn as_ref(&self) -> ::protobuf::reflect::ReflectValueRef<'_> {
         ::protobuf::reflect::ReflectValueRef::Enum(::protobuf::ProtobufEnum::descriptor(self))
     }
 }

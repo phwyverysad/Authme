@@ -1,13 +1,12 @@
 import { BarcodeDetectorPolyfill } from "@undecaf/barcode-detector-polyfill"
 import * as fs from "@tauri-apps/plugin-fs"
-import * as dialog from "@tauri-apps/plugin-dialog"
+import * as dialog from "interface/utils/dialog"
 import { getState, setState } from "../../stores/state"
+import { getSettings, setSettings } from "interface/stores/settings"
 import { navigate } from "../../utils/navigate"
 import logger from "interface/utils/logger"
 import { decodeBase64, migrationImageConverter, totpImageConverter } from "@utils/convert"
-import { getLanguage } from "@utils/language"
-
-const language = getLanguage()
+import { getLanguage, language } from "@utils/language"
 
 /**
  * Choose images, then read QR codes
@@ -32,69 +31,72 @@ export const chooseImages = async () => {
 	}
 
 	let importString = ""
+	let importedAny = false
 
-	// Read QR codes from images
+	// Read QR codes from images sequentially
 	for (let i = 0; i < images.length; i++) {
-		const processImages = async () => {
-			try {
-				const detector = new BarcodeDetectorPolyfill()
-				const res = (await detector.detect(images[i]))[0]
+		try {
+			const detector = new BarcodeDetectorPolyfill()
+			const results = await detector.detect(images[i])
 
-				if (res.rawValue.startsWith("otpauth://totp/") || res.rawValue.startsWith("otpauth-migration://")) {
-					if (res.rawValue.startsWith("otpauth://totp/")) {
-						importString += totpImageConverter(res.rawValue)
-					} else {
-						const converted = await migrationImageConverter(res.rawValue)
-
-						if (converted === "") {
-							return dialog.message("Failed to decode QR code(s). \n\nPlease try again with another picture!", { kind: "error" })
-						} else {
-							importString += converted
-						}
-					}
-
-					// QR codes found on all images
-					if (images.length === i + 1) {
-						dialog.message(language.codes.dialog.codesImported)
-
-						const state = getState()
-						state.importData = importString
-						setState(state)
-
-						navigate("codes")
-					}
-				} else {
-					// Wrong QR code found
-					logger.error(`Error while reading QR code: ${res.rawValue}}`)
-					dialog.message(`Wrong QR code found on the #${i + 1} picture! \n\nPlease try again with another picture!`, { kind: "error" })
-				}
-			} catch (error) {
-				// Error while reading QR code
-				logger.error(`Error while reading QR code: ${error}}`)
+			if (!results || results.length === 0) {
+				logger.error(`No QR code found on the #${i + 1} picture`)
 				dialog.message(`No QR code found on the #${i + 1} picture! \n\nPlease try again with another picture!`, { kind: "error" })
+				continue
 			}
-		}
 
-		processImages()
+			const res = results[0]
+
+			if (res.rawValue.startsWith("otpauth://totp/") || res.rawValue.startsWith("otpauth-migration://")) {
+				if (res.rawValue.startsWith("otpauth://totp/")) {
+					importString += totpImageConverter(res.rawValue)
+					importedAny = true
+				} else {
+					const converted = await migrationImageConverter(res.rawValue)
+
+					if (converted === "") {
+						dialog.message("Failed to decode QR code(s). \n\nPlease try again with another picture!", { kind: "error" })
+					} else {
+						importString += converted
+						importedAny = true
+					}
+				}
+			} else {
+				// Wrong QR code found
+				logger.error(`Error while reading QR code: ${res.rawValue}`)
+				dialog.message(`Wrong QR code found on the #${i + 1} picture! \n\nPlease try again with another picture!`, { kind: "error" })
+			}
+		} catch (error) {
+			logger.error(`Error while reading QR code: ${error}`)
+			dialog.message(`No QR code found on the #${i + 1} picture! \n\nPlease try again with another picture!`, { kind: "error" })
+		}
+	}
+
+	if (importedAny && importString.trim() !== "") {
+		dialog.message(language.codes.dialog.codesImported)
+
+		const state = getState()
+		state.importData = (state.importData ? state.importData + "\n" : "") + importString
+		setState(state)
+
+		navigate("codes")
 	}
 }
 
-/**
- * Show manual entry dialog
- */
+export const closeManualEntry = () => {
+	const dialog: LibDialogElement | null = document.querySelector(".dialog0")
+	const nameInput = document.querySelector(".name") as HTMLInputElement | null
+	const secretInput = document.querySelector(".secret") as HTMLInputElement | null
+	const descInput = document.querySelector(".description") as HTMLInputElement | null
+	if (nameInput) nameInput.value = ""
+	if (secretInput) secretInput.value = ""
+	if (descInput) descInput.value = ""
+	dialog?.close()
+}
+
 export const showManualEntry = () => {
-	const dialog: LibDialogElement = document.querySelector(".dialog0")
-	const closeDialog = document.querySelector(".dialog0Close")
-
-	closeDialog.addEventListener("click", () => {
-		document.querySelector(".name").value = ""
-		document.querySelector(".secret").value = ""
-		document.querySelector(".description").value = ""
-
-		dialog.close()
-	})
-
-	dialog.showModal()
+	const dialog: LibDialogElement | null = document.querySelector(".dialog0")
+	dialog?.showModal()
 }
 
 /**
@@ -178,20 +180,21 @@ export const showTutorial = (type: tutorialType) => {
 		}
 	}
 
-	closeDialog.addEventListener("click", () => {
-		dialog.close()
-	})
+	dialog?.showModal()
+}
 
-	dialog.showModal()
+export const closeTutorial = () => {
+	const dialog: LibDialogElement | null = document.querySelector(".tutorialDialog")
+	dialog?.close()
 }
 
 /**
  * Enter a TOTP code manually
  */
 export const manualEntry = () => {
-	const issuer = document.querySelector(".name").value
-	const secret = document.querySelector(".secret").value
-	let name = document.querySelector(".description").value
+	const issuer = (document.querySelector(".name") as HTMLInputElement)?.value?.trim() ?? ""
+	const secret = (document.querySelector(".secret") as HTMLInputElement)?.value?.trim() ?? ""
+	let name = (document.querySelector(".description") as HTMLInputElement)?.value?.trim() ?? ""
 
 	if (issuer === "") {
 		return dialog.message("The name field is required. \n\nPlease try again!", { kind: "error" })
@@ -208,7 +211,7 @@ export const manualEntry = () => {
 	const importString = `\nName:   ${name} \nSecret: ${secret} \nIssuer: ${issuer} \nType:   OTP_TOTP\n`
 
 	const state = getState()
-	state.importData += importString
+	state.importData = (state.importData ? state.importData + "\n" : "") + importString
 	setState(state)
 
 	navigate("codes")
@@ -219,6 +222,7 @@ export const manualEntry = () => {
  */
 export const chooseFile = async () => {
 	const state = getState()
+	const settings = getSettings()
 	const filePath = await dialog.open({ filters: [{ name: "Authme file", extensions: ["authme"] }] })
 
 	if (filePath !== null) {
@@ -226,11 +230,31 @@ export const chooseFile = async () => {
 		const file: LibAuthmeFile = JSON.parse(loadedFile)
 		const importString = decodeBase64(file.codes)
 
-		dialog.message(language.codes.dialog.codesImported)
+		const hasExistingCodes = Boolean(settings.vault?.codes || state.importData)
+		let shouldMerge = false
 
-		state.importData = importString
+		if (hasExistingCodes) {
+			shouldMerge = await dialog.ask(
+				language.import?.mergeOrReplacePrompt || "Existing 2FA codes found in your vault.\n\nDo you want to MERGE the imported codes with your existing codes, or REPLACE them completely?",
+				{
+					title: language.import?.importOptionsTitle || "Import .authme file",
+					okLabel: language.import?.mergeButton || "Merge",
+					cancelLabel: language.import?.replaceButton || "Replace",
+					kind: "info",
+				}
+			)
+		}
+
+		if (shouldMerge) {
+			state.importData = (state.importData ? state.importData + "\n" : "") + importString
+		} else {
+			settings.vault.codes = null
+			setSettings(settings)
+			state.importData = importString
+		}
+
 		setState(state)
-
+		dialog.message(language.codes.dialog.codesImported)
 		navigate("codes")
 	}
 }
@@ -258,10 +282,10 @@ export const twoFasAuthFile = async () => {
 		const file: TwoFasFile = JSON.parse(loadedFile)
 		let importString = ""
 
-		for (let i = 0; i < file.services.length; i++) {
+		for (let i = 0; i < (file.services?.length || 0); i++) {
 			const service = file.services[i]
 
-			if (service.otp.tokenType === "TOTP") {
+			if (service?.otp?.tokenType === "TOTP") {
 				if (service.otp.source === "Link" && service.otp.link !== undefined && service.otp.link.trim()) {
 					importString += totpImageConverter(service.otp.link)
 				} else {
@@ -273,7 +297,7 @@ export const twoFasAuthFile = async () => {
 		dialog.message(language.codes.dialog.codesImported)
 
 		const state = getState()
-		state.importData = importString
+		state.importData = (state.importData ? state.importData + "\n" : "") + importString
 		setState(state)
 
 		navigate("codes")
@@ -304,10 +328,10 @@ export const aegisFile = async () => {
 		const file: AegisFile = JSON.parse(loadedFile)
 		let importString = ""
 
-		for (let i = 0; i < file.db.entries.length; i++) {
+		for (let i = 0; i < (file.db?.entries?.length || 0); i++) {
 			const entry = file.db.entries[i]
 
-			if (entry.type === "totp") {
+			if (entry?.type === "totp" && entry?.info?.secret) {
 				importString += totpImageConverter(`otpauth://totp/${entry.name}?secret=${entry.info.secret}&issuer=${entry.issuer}`)
 			}
 		}
@@ -315,7 +339,7 @@ export const aegisFile = async () => {
 		dialog.message(language.codes.dialog.codesImported)
 
 		const state = getState()
-		state.importData = importString
+		state.importData = (state.importData ? state.importData + "\n" : "") + importString
 		setState(state)
 
 		navigate("codes")
@@ -331,8 +355,8 @@ export const bitwardenFile = async () => {
 	interface BitwardenFile {
 		encrypted: boolean
 		items: {
-			login: {
-				totp: string
+			login?: {
+				totp?: string
 			}
 		}[]
 	}
@@ -342,10 +366,10 @@ export const bitwardenFile = async () => {
 		const file: BitwardenFile = JSON.parse(loadedFile)
 		let importString = ""
 
-		for (let i = 0; i < file.items.length; i++) {
+		for (let i = 0; i < (file.items?.length || 0); i++) {
 			const entry = file.items[i]
 
-			if (entry.login.totp) {
+			if (entry?.login?.totp) {
 				importString += totpImageConverter(entry.login.totp)
 			}
 		}
@@ -353,7 +377,7 @@ export const bitwardenFile = async () => {
 		dialog.message(language.codes.dialog.codesImported)
 
 		const state = getState()
-		state.importData = importString
+		state.importData = (state.importData ? state.importData + "\n" : "") + importString
 		setState(state)
 
 		navigate("codes")
@@ -368,9 +392,9 @@ export const protonFile = async () => {
 
 	interface ProtonFile {
 		entries: {
-			content: {
-				uri: string
-				name: string
+			content?: {
+				uri?: string
+				name?: string
 			}
 		}[]
 	}
@@ -387,7 +411,7 @@ export const protonFile = async () => {
 		for (let i = 0; i < file.entries.length; i++) {
 			const entry = file.entries[i]
 
-			if (entry.content.uri.startsWith("otpauth://totp/")) {
+			if (entry?.content?.uri?.startsWith("otpauth://totp/")) {
 				importString += totpImageConverter(entry.content.uri)
 			}
 		}
@@ -395,7 +419,7 @@ export const protonFile = async () => {
 		dialog.message(language.codes.dialog.codesImported)
 
 		const state = getState()
-		state.importData = importString
+		state.importData = (state.importData ? state.importData + "\n" : "") + importString
 		setState(state)
 
 		navigate("codes")
@@ -412,8 +436,9 @@ export const authenticatorcc = async () => {
 		const loadedFile = await fs.readTextFile(filePath)
 		let importString = ""
 
-		for (let i = 0; i < loadedFile.split("\n").length; i++) {
-			const line = loadedFile.split("\n")[i]
+		const lines = loadedFile.split(/\r?\n/)
+		for (let i = 0; i < lines.length; i++) {
+			const line = lines[i].trim()
 
 			if (line.startsWith("otpauth://totp/")) {
 				importString += totpImageConverter(line)
@@ -423,7 +448,7 @@ export const authenticatorcc = async () => {
 		dialog.message(language.codes.dialog.codesImported)
 
 		const state = getState()
-		state.importData = importString
+		state.importData = (state.importData ? state.importData + "\n" : "") + importString
 		setState(state)
 
 		navigate("codes")

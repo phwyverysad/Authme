@@ -1,61 +1,114 @@
 # Authme
 
-- Simple cross-platform two-factor (2FA) authenticator app for desktop.
+[![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-blue.svg)](LICENSE.md)
+[![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey.svg)]()
+[![Built with Tauri v2](https://img.shields.io/badge/Built%20with-Tauri%20v2-24C8D8.svg?logo=tauri&logoColor=white)](https://tauri.app)
+[![Svelte](https://img.shields.io/badge/Frontend-Svelte%20%2B%20TailwindCSS-FF3E00.svg?logo=svelte&logoColor=white)](https://svelte.dev)
 
-[![Downloads](https://img.shields.io/github/downloads/levminer/authme/total?label=Downloads)](https://authme.levminer.com/#downloads)
-[![Support](https://img.shields.io/badge/Support-PayPal-blue)](https://paypal.me/levminer)
-[![License](https://img.shields.io/github/license/levminer/authme?label=License)](https://github.com/Levminer/authme/blob/dev/LICENSE.md)
+A modern, fast, and privacy-focused cross-platform Two-Factor Authentication (2FA / TOTP) desktop application with integrated verification email management, built with **Tauri v2**, **Rust**, **Svelte**, and **Tailwind CSS**.
+
+---
 
 ## Features
 
-- 🔒 Secure by design: Your codes are secured by AES 256bit encryption with your own password.
-- 🔑 Import codes: Import form any 2FA TOTP QR code or import directly from Google Authenticator.
-- 🖱️ Cross-platform: You can use Authme on every system you own. Available on Windows, Linux, macOS and web.
-- 📡 Completely offline: You own your data, internet is only required for updates.
-- 💻 Privacy in mind: Authme is hidden from video capture and screenshots.
-- 📃 Easy export and backup: You can export your 2FA codes anytime and you can create a backup of your codes very easily.
-- 🌐 Multi-language: Authme is available in 🇬🇧 English, 🇭🇺 Hungarian, 🇪🇸 Spanish, 🇫🇷 French, 🇷🇺 Russian, 🇩🇪 German, 🇨🇳 Chinese, 🇯🇵 Japanese and 🇵🇱 Polish.
+### 🔒 Security & Privacy First
+- **Zero-Knowledge Encryption**: All credentials and secrets are encrypted locally using AES-256 with Argon2 key derivation. Your data never leaves your device unencrypted.
+- **Inactivity Auto-Lock**: Automatically locks the vault after a configurable period of inactivity.
+- **Clipboard Guard**: Automatically wipes copied 2FA verification tokens from the system clipboard after a customizable countdown to prevent unauthorized access.
+- **Privacy Protection**: Blocks window capture and screen recordings to keep confidential tokens hidden.
 
-## Supported 2FA types
+### 🔑 Multi-Source Import & Export
+- **Google Authenticator**: Import QR codes and migration links (`otpauth-migration://`) directly using high-performance native Rust protobuf decoding.
+- **2FAS & Aegis Authenticator**: Native support for importing encrypted or decrypted vaults from 2FAS and Aegis.
+- **Multi-Format Export**: Export your vault securely to encrypted backup files or interoperable structured formats.
 
-- TOTP: A TOTP QR code is that you find mostly everywhere, if you want to setup 2FA. Example: Google, Facebook, Microsoft, etc.
-- Google Authenticator: If you are already using Google Authenticator you can export all of your exiting codes and import them to Authme.
-- 2FAS Authenticator: You can create a backup of all your codes in 2FAS and import the backup in Authme.
-- Aegis Authenticator: You can export your vault from Aegis and import it to Authme.
+### 📬 Integrated Mail Hub & Verification Code Extraction
+- **In-App Mail Integration**: Manage verification mailboxes directly within the app.
+- **Auto OTP Extraction**: Intelligent pattern recognition automatically extracts verification codes from incoming email bodies with one-click copy and auto-match to your 2FA accounts.
 
-## Screenshot
+### ⚡ Smart UI & Usability
+- **Intuitive Management**: Tagging, search filtering, custom account reordering, and favorite account pinning.
+- **Context Menu & In-App Dialogs**: Modern right-click context menu and native styled interactive modals for a seamless desktop experience.
+- **Time Drift Synchronization**: Real-time validation against UTC time servers to verify accurate TOTP generation.
+- **Window State Persistence**: Remembers window position, size, and layout preferences across restarts.
+- **Multi-Language Support**: Fully translated into English, Thai (ภาษาไทย), Spanish, French, German, Russian, Chinese, Japanese, Hungarian, Polish, and Arabic.
 
-<img src="https://raw.githubusercontent.com/Levminer/authme/dev/screenshots/codes.png?raw=true">
+---
 
-## Downloads
+## Tech Stack
 
-- Latest release version for users that want a stable and polished experience.
+- **Backend**: Rust, Tauri v2 (`core`), and native extension crate (`core/crates/authme_extensions`).
+- **Frontend**: Svelte 4, TypeScript, Tailwind CSS, Headless UI.
+- **Bundler**: esbuild with custom build pipeline.
 
-[![Latest release](https://img.shields.io/github/v/release/levminer/authme?label=Release)](https://tooomm.github.io/github-release-stats/?username=Levminer&repository=authme)
-[![Download](https://img.shields.io/badge/Windows,%20Linux,%20macOS-download-brightgreen)](https://authme.levminer.com/#downloads)
-[![Updated](https://img.shields.io/github/last-commit/levminer/authme/dev?color=yellowgreen&label=Updated)](https://github.com/Levminer/authme/releases)
+---
 
-- Also available on: [Microsoft Store](https://link.levminer.com/authme-microsoft-store), [Snapcraft](https://snapcraft.io/authme), [winget](https://winstall.app/apps/Levminer.Authme), and [Scoop](https://scoop.sh/#/apps?s=2&d=1&o=true&q=authme).
+## Project Structure
 
-## Migration
+```
+├── core/                           # Tauri backend (Rust)
+│   ├── crates/
+│   │   ├── authme_extensions/      # Native Rust dynamic extension library
+│   │   └── google_authenticator_converter/ # Protobuf migration decoder
+│   ├── resources/                  # Bundled runtime binaries and dynamic libraries
+│   └── src/                        # Main Tauri application logic, encryption, mail services
+├── interface/                      # Svelte frontend
+│   ├── components/                 # Reusable UI components (dialogs, context menu, filters)
+│   ├── layout/                     # App layout and entry points
+│   ├── stores/                     # Svelte reactive state stores
+│   ├── styles/                     # Tailwind CSS and global styling
+│   ├── utils/                      # Helper utilities, security guards, and translations
+│   └── windows/                    # Application pages (codes, mail hub, settings, export/import)
+├── scripts/                        # Build and development scripts
+├── start.bat                       # Quick-launch development runner for Windows
+├── package.json                    # Project dependencies and npm scripts
+└── README.md                       # Documentation
+```
 
-Tutorial on how to migrate to Authme 4 or 5 from Authme 3:
+---
 
-1. Inside Authme: Top menu > Tools > Export.
-1. Click confirm, and export the .authme file.
-1. Go to the settings: Top menu > File > Settings.
-1. Inside the general options: Click Clear data and confirm.
-1. Now uninstall Authme from you computer.
-1. Download [Authme 5](https://authme.levminer.com/#downloads) and install it.
-1. Go through the getting started wizard.
-1. In the codes page select Choose file and choose the .authme file you saved.
+## Getting Started
 
-## Contributing and development
+### Prerequisites
 
-- Contributions are always welcome! Read for development and building instructions: [Contributing](https://github.com/Levminer/authme/blob/dev/.github/CONTRIBUTING.md)
-- Do you want to translate Authme? [Instructions](https://github.com/Levminer/authme/issues/258)
+- [Node.js](https://nodejs.org/) (v18 or higher recommended)
+- [Rust & Cargo](https://rustup.rs/) (latest stable toolchain)
+- Operating system build tools:
+  - **Windows**: Microsoft C++ Build Tools / Visual Studio with C++ workload.
+  - **Linux**: Standard build essentials and webkit2gtk development packages.
+  - **macOS**: Xcode command line tools.
+
+### Installation
+
+Clone the repository and install frontend dependencies:
+
+```bash
+git clone https://github.com/phwyverysad/Authme.git
+cd Authme
+npm install
+```
+
+### Running in Development
+
+Start the development environment with hot reloading:
+
+```bash
+npm start
+```
+*(On Windows, you can also run `start.bat`)*
+
+### Building for Production
+
+Compile the production desktop application:
+
+```bash
+npm run build
+```
+
+The compiled binaries and installers will be generated under `core/target/release/bundle/`.
+
+---
 
 ## License
 
-- This software is licensed under: [GPL-3.0](https://github.com/Levminer/authme/blob/dev/LICENSE.md)
-- If you are planning to use this software as a business please contact me at: <authme@levminer.com>
+This project is licensed under the **GNU General Public License v3.0 (GPL-3.0)**. See the [LICENSE.md](LICENSE.md) file for details.

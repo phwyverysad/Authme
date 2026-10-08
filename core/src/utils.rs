@@ -49,19 +49,23 @@ pub fn logger(message: String, time: String, kind: &str) {
 
 #[tauri::command]
 pub fn create_logs_dir(path: String) {
-    fs::create_dir_all(path).unwrap();
+    let _ = fs::create_dir_all(path);
 }
 
 #[tauri::command]
 pub fn write_logs(name: String, message: String) {
-    let mut file = fs::OpenOptions::new()
+    if let Some(parent) = std::path::Path::new(&name).parent() {
+        let _ = fs::create_dir_all(parent);
+    }
+
+    if let Ok(mut file) = fs::OpenOptions::new()
         .write(true)
         .append(true)
         .create(true)
-        .open(name)
-        .unwrap();
-
-    write!(file, "{}", message).unwrap();
+        .open(&name)
+    {
+        let _ = write!(file, "{}", message);
+    }
 }
 
 #[derive(Serialize, Deserialize)]
@@ -78,9 +82,13 @@ pub fn system_info() -> SystemInfo {
     let mut sys = System::new_all();
     sys.refresh_all();
 
-    let mut os_name = System::name().unwrap();
+    let mut os_name = System::name().unwrap_or_else(|| "Windows".to_string());
     let mut os_arch = env::consts::ARCH.to_string();
-    let cpu_name = sys.cpus()[0].brand().to_string();
+    let cpu_name = sys
+        .cpus()
+        .first()
+        .map(|c| c.brand().to_string())
+        .unwrap_or_else(|| "Unknown CPU".to_string());
     let total_mem = sys.total_memory();
 
     os_name = match os_name.as_str() {
@@ -104,12 +112,95 @@ pub fn system_info() -> SystemInfo {
     res.into()
 }
 
+pub fn try_call_dll_converter(secret: &str) -> Option<Vec<Account>> {
+    use std::ffi::{CStr, CString};
+    use std::os::raw::c_char;
+
+    // Search order: adjacent to current exe, current working directory, or target dir
+    let exe_dir = std::env::current_exe().ok().and_then(|p| p.parent().map(|d| d.to_path_buf()));
+    let search_dirs = [
+        exe_dir.clone(),
+        exe_dir.as_ref().map(|d| d.join("resources")),
+        std::env::current_dir().ok(),
+        std::env::current_dir().ok().map(|d| d.join("resources")),
+        std::env::current_dir().ok().map(|d| d.join("dist-exe")),
+        std::env::current_dir().ok().map(|d| d.join("core").join("resources")),
+        std::env::current_dir().ok().map(|d| d.join("core").join("target").join("release")),
+    ];
+
+    let dll_names = ["authme_extensions.dll", "google_authenticator_converter.dll"];
+
+    for dir_opt in &search_dirs {
+        if let Some(dir) = dir_opt {
+            for dll_name in &dll_names {
+                let dll_path = dir.join(dll_name);
+                if dll_path.exists() {
+                    unsafe {
+                        if let Ok(lib) = libloading::Library::new(&dll_path) {
+                            // Try authme_extension_convert_google_auth first
+                            if let Ok(convert_fn) = lib.get::<unsafe extern "C" fn(*const c_char) -> *mut c_char>(b"authme_extension_convert_google_auth\0") {
+                                if let Ok(free_fn) = lib.get::<unsafe extern "C" fn(*mut c_char)>(b"authme_extension_free_string\0") {
+                                    if let Ok(c_sec) = CString::new(secret) {
+                                        let res_ptr = convert_fn(c_sec.as_ptr());
+                                        if !res_ptr.is_null() {
+                                            let json_str = CStr::from_ptr(res_ptr).to_str().unwrap_or("[]").to_string();
+                                            free_fn(res_ptr);
+                                            if let Ok(accounts) = serde_json::from_str::<Vec<Account>>(&json_str) {
+                                                return Some(accounts);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            // Fallback to authme_google_authenticator_convert
+                            if let Ok(convert_fn) = lib.get::<unsafe extern "C" fn(*const c_char) -> *mut c_char>(b"authme_google_authenticator_convert\0") {
+                                if let Ok(free_fn) = lib.get::<unsafe extern "C" fn(*mut c_char)>(b"authme_free_string\0") {
+                                    if let Ok(c_sec) = CString::new(secret) {
+                                        let res_ptr = convert_fn(c_sec.as_ptr());
+                                        if !res_ptr.is_null() {
+                                            let json_str = CStr::from_ptr(res_ptr).to_str().unwrap_or("[]").to_string();
+                                            free_fn(res_ptr);
+                                            if let Ok(accounts) = serde_json::from_str::<Vec<Account>>(&json_str) {
+                                                return Some(accounts);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    None
+}
+
 #[tauri::command]
 pub fn google_authenticator_converter(secret: &str) -> Vec<Account> {
-    let res = process_data(secret);
+    if let Some(accounts) = try_call_dll_converter(secret) {
+        return accounts;
+    }
 
+    let res = process_data(secret);
     match res {
         Ok(accounts) => accounts,
         Err(_) => vec![],
     }
 }
+
+#[tauri::command]
+pub fn get_dll_extension_info() -> serde_json::Value {
+    let exe_dir = std::env::current_exe().ok().and_then(|p| p.parent().map(|d| d.to_path_buf()));
+    let dll_name = "authme_extensions.dll";
+    let dll_path = exe_dir.map(|d| d.join(dll_name));
+    let exists = dll_path.as_ref().map(|p| p.exists()).unwrap_or(false);
+
+    serde_json::json!({
+        "status": if exists { "active_dll" } else { "embedded_fallback" },
+        "dll_name": dll_name,
+        "is_dynamic": exists,
+        "version": "1.0.0"
+    })
+}
+

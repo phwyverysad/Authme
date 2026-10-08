@@ -42,8 +42,8 @@ html {
 	}
 
 	/* code element */
-	.code {
-		@apply transparent-800 w-full max-w-2xl flex-grow rounded-xl p-4 small:w-1/3;
+	.code, .mail-card {
+		@apply transparent-800 w-full rounded-2xl p-3.5 sm:p-4 border border-white/10 hover:border-white/25 transition-all duration-200 ease-out shadow-lg cursor-pointer;
 	}
 
 	.dialog {
@@ -65,14 +65,28 @@ html {
 }
 
 /* body */
+html, body {
+	height: 100%;
+	width: 100%;
+	margin: 0;
+	padding: 0;
+	overflow: hidden;
+}
+
+#app {
+	height: 100%;
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+}
+
 body {
 	color: white;
 	box-sizing: border-box;
 	display: flex;
 	flex-direction: column;
-	min-height: 100vh;
-	/* background-color: rgb(10, 10, 10); */
-	background: transparent;
+	background-color: #0f172a;
 	line-height: normal;
 	font-family: system-ui, Arial;
 	user-select: none;
@@ -82,29 +96,29 @@ body {
 
 /* headings */
 h1 {
-	font-size: 60px;
+	font-size: 3.5rem;
 	font-weight: 700;
 }
 
 /* main card */
 h2 {
-	font-size: 28px;
+	font-size: 1.65rem;
 	font-weight: 700;
 }
 
 h3 {
-	font-size: 20px;
+	font-size: 1.15rem;
 	color: #d3cfcf;
 }
 
 /* secondary card */
 h4 {
-	font-size: 20px;
+	font-size: 1.15rem;
 	font-weight: 500;
 }
 
 h5 {
-	font-size: 14px;
+	font-size: 0.875rem;
 	color: #d3cfcf;
 }
 
@@ -157,9 +171,9 @@ h5 {
 .progressFull {
 	position: relative;
 	width: 100%;
-	height: 15px;
-	background: hsla(0, 0%, 100%, 5.12%);
-	border-radius: 30px;
+	height: 8px;
+	background: hsla(0, 0%, 100%, 8%);
+	border-radius: 9999px;
 	overflow: hidden;
 }
 
@@ -167,7 +181,8 @@ h5 {
 	width: 0%;
 	height: 100%;
 	background: white;
-	transition: all 0.2s;
+	border-radius: 9999px;
+	transition: width 0.25s linear, background-color 0.4s ease;
 }
 
 /* dialog */
@@ -218,3 +233,262 @@ dialog.hide {
 	font-size: 18px;
 	margin-left: 20px;
 }
+
+/* ==========================================================================
+   Theme Support (Light & Dark)
+   ========================================================================== */
+
+html.dark,
+html[data-theme="dark"],
+body[data-theme="dark"],
+body.dark,
+body:not([data-theme="light"]) {
+	color: #ffffff !important;
+	background-color: #0f172a !important;
+	color-scheme: dark;
+}
+
+html.light,
+html[data-theme="light"],
+body[data-theme="light"],
+body.light {
+	color: #0f172a !important;
+	background-color: #f1f5f9 !important;
+	color-scheme: light;
+}
+
+[data-theme="light"] h1,
+[data-theme="light"] h2,
+[data-theme="light"] h4,
+html.light h1,
+html.light h2,
+html.light h4 {
+	color: #0f172a;
+}
+
+[data-theme="light"] h3,
+[data-theme="light"] h5,
+html.light h3,
+html.light h5 {
+	color: #64748b;
+}
+
+[data-theme="light"] .transparent-900,
+html.light .transparent-900 {
+	background-color: #ffffff;
+	border: 1px solid #e2e8f0;
+	box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="light"] .transparent-800,
+html.light .transparent-800 {
+	background-color: #f8fafc;
+	border: 1px solid #e2e8f0;
+}
+
+[data-theme="light"] .transparent-900-hover:hover,
+[data-theme="light"] .transparentHover:hover,
+html.light .transparent-900-hover:hover,
+html.light .transparentHover:hover {
+	background-color: #e2e8f0;
+}
+
+[data-theme="light"] .code,
+[data-theme="light"] .mail-card,
+html.light .code,
+html.light .mail-card {
+	background-color: #ffffff;
+	border: 1px solid #e2e8f0;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .code:hover,
+[data-theme="light"] .mail-card:hover,
+html.light .code:hover,
+html.light .mail-card:hover {
+	border-color: #38bdf8;
+	box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .input,
+html.light .input {
+	background-color: #ffffff;
+	color: #0f172a;
+	border: 1px solid #cbd5e1;
+}
+
+[data-theme="light"] .input:focus,
+html.light .input:focus {
+	background-color: #ffffff;
+	border-color: #0284c7;
+}
+
+[data-theme="light"] .input::placeholder,
+html.light .input::placeholder {
+	color: #94a3b8;
+}
+
+[data-theme="light"] .button,
+html.light .button {
+	background-color: #0f172a;
+	color: #ffffff;
+	border-color: #0f172a;
+}
+
+[data-theme="light"] .button:hover,
+html.light .button:hover {
+	background-color: #1e293b;
+	color: #ffffff;
+}
+
+[data-theme="light"] .smallButton,
+html.light .smallButton {
+	background-color: #0f172a;
+	color: #ffffff;
+	border-color: #0f172a;
+}
+
+[data-theme="light"] .smallButton:hover,
+html.light .smallButton:hover {
+	background-color: #1e293b;
+	color: #ffffff;
+}
+
+[data-theme="light"] .selectedMenuButton,
+html.light .selectedMenuButton {
+	background-color: #0f172a;
+	color: #ffffff !important;
+}
+
+[data-theme="light"] .menuButton,
+html.light .menuButton {
+	color: #64748b;
+}
+
+[data-theme="light"] .menuButton:hover,
+html.light .menuButton:hover {
+	color: #0f172a;
+	background-color: #e2e8f0;
+}
+
+[data-theme="light"] .select,
+html.light .select {
+	background-color: #ffffff;
+	color: #0f172a;
+	border: 1px solid #cbd5e1;
+}
+
+[data-theme="light"] .edit,
+html.light .edit {
+	background-color: #ffffff;
+	border: 1px solid #e2e8f0;
+}
+
+[data-theme="light"] ::selection,
+html.light ::selection {
+	background: #bfdbfe;
+	color: #1e3a8a;
+}
+
+/* Prevent text selection highlight on code numbers and cards */
+.code, .code *, .mail-card, .mail-card * {
+	-webkit-user-select: none !important;
+	-moz-user-select: none !important;
+	user-select: none !important;
+}
+
+/* Drag & Drop Reordering Animations & Styles */
+body.is-dragging-code {
+	user-select: none !important;
+	-webkit-user-select: none !important;
+	cursor: grabbing !important;
+}
+
+body.is-dragging-code * {
+	cursor: grabbing !important;
+}
+
+body.is-dragging-code .code:not(.code-drag-placeholder):not(.code-drag-floating) {
+	pointer-events: none !important;
+}
+
+.drag-handle {
+	touch-action: none !important;
+	user-select: none !important;
+	-webkit-user-select: none !important;
+	cursor: grab !important;
+}
+
+.drag-handle:active {
+	cursor: grabbing !important;
+}
+
+.code-drag-placeholder {
+	opacity: 0.35 !important;
+	border: 2px dashed rgba(56, 189, 248, 0.85) !important;
+	background-color: rgba(56, 189, 248, 0.08) !important;
+	box-shadow: inset 0 2px 12px rgba(56, 189, 248, 0.2) !important;
+	transform: none !important;
+	will-change: opacity, border-color !important;
+	transition: opacity 150ms ease, border-color 150ms ease !important;
+}
+
+.code-drag-floating {
+	position: fixed !important;
+	top: 0 !important;
+	left: 0 !important;
+	z-index: 99999 !important;
+	pointer-events: none !important;
+	will-change: transform !important;
+	transform-origin: center center !important;
+	transition: none !important;
+	box-shadow: 0 25px 50px -12px rgba(14, 165, 233, 0.45), 0 12px 24px -8px rgba(0, 0, 0, 0.4) !important;
+	border: 2px solid rgba(56, 189, 248, 0.9) !important;
+	border-radius: 1rem !important;
+	backdrop-filter: blur(16px) !important;
+}
+
+.code-drop-settle {
+	animation: dropSettle 0.35s cubic-bezier(0.25, 1, 0.5, 1) forwards !important;
+}
+
+@keyframes dropSettle {
+	0% {
+		transform: scale(1.02);
+		box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.8), 0 12px 24px -6px rgba(14, 165, 233, 0.4);
+	}
+	100% {
+		transform: scale(1);
+		box-shadow: none;
+	}
+}
+
+/* Universal scrollbar hiding utility */
+.no-scrollbar::-webkit-scrollbar {
+	display: none !important;
+	width: 0 !important;
+	height: 0 !important;
+}
+
+.no-scrollbar {
+	-ms-overflow-style: none !important;
+	scrollbar-width: none !important;
+}
+
+/* Pinned 2FA & Mail Card Styling */
+.code.code-pinned,
+.mail-card.mail-card-pinned {
+	border-color: rgba(251, 191, 36, 0.45) !important;
+	box-shadow: 0 4px 18px -2px rgba(245, 158, 11, 0.12) !important;
+}
+
+[data-theme="light"] .code.code-pinned,
+[data-theme="light"] .mail-card.mail-card-pinned,
+html.light .code.code-pinned,
+html.light .mail-card.mail-card-pinned {
+	border-color: rgba(245, 158, 11, 0.5) !important;
+	background-color: #fffdfa !important;
+	box-shadow: 0 4px 18px -2px rgba(245, 158, 11, 0.14) !important;
+}
+
+

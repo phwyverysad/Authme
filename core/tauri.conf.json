@@ -23,13 +23,13 @@
 			"providerShortName": null,
 			"signingIdentity": null
 		},
-		"resources": [],
+		"resources": ["resources/*"],
 		"linux": {
 			"deb": {
 				"depends": []
 			}
 		},
-		"createUpdaterArtifacts": "v1Compatible"
+		"createUpdaterArtifacts": false
 	},
 	"productName": "Authme",
 	"version": "../package.json",
@@ -42,31 +42,30 @@
 	},
 	"app": {
 		"trayIcon": {
+			"id": "main",
 			"iconPath": "icons/32x32.png",
-			"tooltip": "Authme"
+			"tooltip": "Authme",
+			"showMenuOnLeftClick": false
 		},
 		"windows": [
 			{
+				"label": "main",
 				"title": "Authme",
-				"x": 0,
-				"y": 0,
-				"width": 1900,
-				"height": 1000,
+				"width": 1280,
+				"height": 800,
 				"minWidth": 550,
 				"minHeight": 550,
-				"maximized": true,
+				"center": true,
+				"maximized": false,
 				"visible": false,
 				"theme": "Dark",
-				"contentProtected": true,
+				"contentProtected": false,
 				"useHttpsScheme": true,
-				"transparent": true,
-				"windowEffects": {
-					"effects": ["mica"]
-				}
+				"devtools": true
 			}
 		],
 		"security": {
-			"csp": "default-src blob: data: filesystem: ws: http: https: 'unsafe-eval' 'unsafe-inline' 'self' img-src: 'self'; script-src 'unsafe-eval'"
+			"csp": null
 		}
 	}
 }

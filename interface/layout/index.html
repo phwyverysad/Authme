@@ -1,12 +1,20 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark" style="background-color: #0f172a; color: #ffffff;">
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<title>Authme</title>
 		<link rel="stylesheet" href="./app.css">
+		<script>
+			window.addEventListener('error', function(e) {
+				console.error('[App Error]', e.message, e.filename, e.lineno, e.colno, e.error);
+			});
+			window.addEventListener('unhandledrejection', function(e) {
+				console.error('[Unhandled Rejection]', e.reason);
+			});
+		</script>
 	</head>
-	<body>
+	<body class="select-none bg-[#0f172a] text-white" style="background-color: #0f172a;" oncontextmenu="return false;">
 		<div id="app"></div>
 		<script type="module" src="./app.js"></script>
 	</body>

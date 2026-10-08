@@ -1,6 +1,6 @@
 import { localeEN } from "@utils/language/en"
 
-export const localeAR: typeof localeEN = {
+export const localeAR = {
 	common: {
 		confirm: "تأكيد",
 		continue: "متابعة",
@@ -169,6 +169,10 @@ export const localeAR: typeof localeEN = {
 		clearData: "مسح البيانات",
 		clearDataText: "مسح كلمة المرور ورموز المصادقة الثنائية (2FA) وجميع الإعدادات الأخرى. انتبه، لا يمكن التراجع عن هذا الإجراء!",
 		clearDataButton: "مسح البيانات",
+		theme: "المظهر",
+		themeText: "اختر بين المظهر الداكن أو الفاتح.",
+		darkTheme: "داكن",
+		lightTheme: "فاتح",
 		codes: "الرموز",
 		codesDescription: "وصف الرموز",
 		codesDescriptionText: "سيتم عرض الوصف الخاص برموز المصادقة الثنائية (2FA). يمكنك نسخها بعد النقر عليها.",

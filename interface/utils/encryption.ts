@@ -1,17 +1,18 @@
 import { invoke } from "@tauri-apps/api/core"
-import * as dialog from "@tauri-apps/plugin-dialog"
+import * as dialog from "./dialog"
 import { getSettings, setSettings } from "interface/stores/settings"
 import logger from "./logger"
 import { dev } from "../../build.json"
 
-const settings = getSettings()
 const service = dev ? "authme_dev" : "authme"
 
 /**
  * Generates random key
  */
 export const generateRandomKey = async (length: number): Promise<ArrayBuffer> => {
-	return new ArrayBuffer(await invoke("random_values", { length }))
+	const array = new Uint8Array(length)
+	window.crypto.getRandomValues(array)
+	return array.buffer
 }
 
 /**
@@ -25,6 +26,7 @@ export const encryptData = async (data: string): Promise<string> => {
  * Decrypts a string with the encryption key
  */
 export const decryptData = async (data: string): Promise<string> => {
+	if (!data || data.trim() === "") return ""
 	const res: string = await invoke("decrypt_data", { data })
 
 	if (res === "error") {
@@ -47,17 +49,21 @@ export const setEntry = async (name: string, data: string) => {
 	return res
 }
 
-/**
- * Set the encryption key on the backend
- */
-export const setEncryptionKey = async () => {
-	const res: string = await invoke("set_encryption_key", { service })
-
-	if (res === "error") {
-		dialog.message("Failed to set the encryption key on your systems keychain!\n\n Please restart the app and try again!", { kind: "error" })
-	}
-
-	return res
+let setEncryptionKeyPromise: Promise<string> | null = null
+export const setEncryptionKey = async (): Promise<string> => {
+	if (setEncryptionKeyPromise) return setEncryptionKeyPromise
+	setEncryptionKeyPromise = (async () => {
+		try {
+			const res: string = await invoke("set_encryption_key", { service })
+			if (res === "error") {
+				dialog.message("Failed to set the encryption key on your systems keychain!\n\n Please restart the app and try again!", { kind: "error" })
+			}
+			return res
+		} finally {
+			setEncryptionKeyPromise = null
+		}
+	})()
+	return setEncryptionKeyPromise
 }
 
 /**
@@ -65,6 +71,14 @@ export const setEncryptionKey = async () => {
  */
 export const sendEncryptionKey = async (key: string) => {
 	return await invoke("receive_encryption_key", { key })
+}
+
+/**
+ * Clear the active encryption key from backend memory
+ */
+export const clearEncryptionKey = async (): Promise<void> => {
+	setEncryptionKeyPromise = null
+	await invoke("clear_encryption_key")
 }
 
 /**
@@ -110,9 +124,10 @@ export const createWebAuthnLogin = async () => {
 			},
 		})
 
-		settings.security.hardwareAuthentication = true
-		settings.security.hardwareKey = res.id
-		setSettings(settings)
+		const currentSettings = getSettings()
+		currentSettings.security.hardwareAuthentication = true
+		currentSettings.security.hardwareKey = res.id
+		setSettings(currentSettings)
 	} catch (error) {
 		dialog.message(`Failed to register your authenticator! This feature might not be supported on your machine. \n\n${error}`, { kind: "error" })
 
@@ -135,7 +150,8 @@ export const verifyWebAuthnLogin = async () => {
 			},
 		})
 
-		if (res.id !== settings.security.hardwareKey) {
+		const currentSettings = getSettings()
+		if (res.id !== currentSettings.security.hardwareKey) {
 			dialog.message("Failed to login with your authenticator. The selected hardware key ID does not match the saved key ID.", { kind: "error" })
 
 			return "error"

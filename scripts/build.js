@@ -9,10 +9,10 @@ import { copy } from "esbuild-plugin-copy"
 import { replace } from "esbuild-plugin-replace"
 import { ZBAR_WASM_REPOSITORY } from "@undecaf/barcode-detector-polyfill/zbar-wasm"
 
-if (existsSync("./dist/index.html") === false) {
-	mkdirSync("./dist")
-	copyFileSync("./interface/layout/index.html", "./dist/index.html")
+if (!existsSync("./dist")) {
+	mkdirSync("./dist", { recursive: true })
 }
+copyFileSync("./interface/layout/index.html", "./dist/index.html")
 
 esbuild
 	.context({

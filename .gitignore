@@ -11,6 +11,7 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+dist-exe
 *.local
 build.json
 log.txt
@@ -25,3 +26,16 @@ log.txt
 *.njsproj
 *.sln
 *.sw?
+
+# Rust target
+**/target/
+**/gen/schemas/
+
+# AI Agents, Skills, and Superpowers
+.agents/
+skills-lock.json
+docs/
+
+# Scratch and Tests
+scratch/
+tests/

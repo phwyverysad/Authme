@@ -1,6 +1,6 @@
 import { localeEN } from "@utils/language/en"
 
-export const localeHU: typeof localeEN = {
+export const localeHU = {
 	common: {
 		confirm: "Megerősítés",
 		continue: "Folytatás",
@@ -169,6 +169,10 @@ export const localeHU: typeof localeEN = {
 		clearData: "Adatok törlése",
 		clearDataText: "Töröld a jelszavadat, a 2FA kódjaidat és minden más beállítást. Vigyázz, ezt nem lehet visszavonni.",
 		clearDataButton: "Adatok törlése",
+		theme: "Téma",
+		themeText: "Alkalmazás megjelenésének módosítása (Sötét / Világos mód).",
+		darkTheme: "Sötét",
+		lightTheme: "Világos",
 		codes: "Kódok",
 		codesDescription: "Kódok leírása",
 		codesDescriptionText: "A 2FA kódok leírása látható lesz. Kattints rájuk a másoláshoz.",

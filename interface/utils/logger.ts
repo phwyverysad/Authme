@@ -37,15 +37,20 @@ const writeToFile = async (message: string) => {
 		return
 	}
 
-	const time = new Date().toISOString().replace("T", "-").replaceAll(":", "-").substring(0, 19)
-	const folderPath = await path.join(await path.cacheDir(), "com.levminer.authme", "logs")
-	await invoke("create_logs_dir", { path: folderPath })
+	try {
+		const time = new Date().toISOString().replace("T", "-").replaceAll(":", "-").substring(0, 19)
+		const cache = await path.cacheDir()
+		const folderPath = await path.join(cache, "com.levminer.authme", "logs")
+		await invoke("create_logs_dir", { path: folderPath })
 
-	if (fileName === undefined) {
-		fileName = `authme-${time}.log`
+		if (fileName === undefined) {
+			fileName = `authme-${time}.log`
+		}
+
+		invoke("write_logs", { name: `${folderPath}/${fileName}`, message: `${message}\n` })
+	} catch (e) {
+		console.error("Failed to write log to file:", e)
 	}
-
-	invoke("write_logs", { name: `${folderPath}/${fileName}`, message: `${message}\n` })
 }
 
 export default { log, warn, error }
