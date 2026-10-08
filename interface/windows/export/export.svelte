@@ -15,8 +15,8 @@
 			type="button"
 			class="px-5 py-2.5 rounded-xl text-sm md:text-base font-semibold transition-all cursor-pointer flex items-center gap-2
 				{activeTab === '2fa'
-					? 'bg-slate-900 text-white dark:bg-white dark:text-black shadow-md'
-					: 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/70 dark:hover:bg-white/10 bg-slate-100 dark:transparent-800 border border-slate-200 dark:border-transparent'}"
+					? 'bg-slate-900 text-white border border-slate-900 dark:bg-white dark:text-black dark:border-white shadow-md'
+					: 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 hover:bg-slate-200/70 dark:bg-white/5 dark:hover:bg-white/10 border border-slate-200 hover:border-slate-300 dark:border-white/10 dark:hover:border-white/20'}"
 			on:click={() => setTab("2fa")}
 		>
 			<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
@@ -32,8 +32,8 @@
 			type="button"
 			class="px-5 py-2.5 rounded-xl text-sm md:text-base font-semibold transition-all cursor-pointer flex items-center gap-2
 				{activeTab === 'mail'
-					? 'bg-slate-900 text-white dark:bg-white dark:text-black shadow-md'
-					: 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/70 dark:hover:bg-white/10 bg-slate-100 dark:transparent-800 border border-slate-200 dark:border-transparent'}"
+					? 'bg-slate-900 text-white border border-slate-900 dark:bg-white dark:text-black dark:border-white shadow-md'
+					: 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 hover:bg-slate-200/70 dark:bg-white/5 dark:hover:bg-white/10 border border-slate-200 hover:border-slate-300 dark:border-white/10 dark:hover:border-white/20'}"
 			on:click={() => setTab("mail")}
 		>
 			<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
