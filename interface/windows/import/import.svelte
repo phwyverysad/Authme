@@ -5,14 +5,20 @@
 	<div class="px-2 sm:px-6 md:px-10 mt-6 flex flex-wrap items-center gap-2">
 		<button
 			type="button"
-			class="px-4 py-2 rounded-xl text-sm font-semibold transition-all cursor-pointer {selectedCategory === 'all' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'transparent-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'}"
+			class="px-4 py-2 rounded-xl text-sm font-semibold transition-all cursor-pointer
+				{selectedCategory === 'all'
+					? 'bg-slate-900 text-white border border-slate-900 dark:bg-white dark:text-black dark:border-white shadow-md'
+					: 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 hover:bg-slate-200/70 dark:bg-white/5 dark:hover:bg-white/10 border border-slate-200 hover:border-slate-300 dark:border-white/10 dark:hover:border-white/20'}"
 			on:click={() => (selectedCategory = "all")}
 		>
 			{language.import?.categoryAll || "All"}
 		</button>
 		<button
 			type="button"
-			class="px-4 py-2 rounded-xl text-sm font-semibold transition-all cursor-pointer {selectedCategory === '2fa' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'transparent-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'}"
+			class="px-4 py-2 rounded-xl text-sm font-semibold transition-all cursor-pointer
+				{selectedCategory === '2fa'
+					? 'bg-slate-900 text-white border border-slate-900 dark:bg-white dark:text-black dark:border-white shadow-md'
+					: 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 hover:bg-slate-200/70 dark:bg-white/5 dark:hover:bg-white/10 border border-slate-200 hover:border-slate-300 dark:border-white/10 dark:hover:border-white/20'}"
 			on:click={() => (selectedCategory = "2fa")}
 		>
 			<span class="flex items-center gap-1.5">
@@ -22,7 +28,10 @@
 		</button>
 		<button
 			type="button"
-			class="px-4 py-2 rounded-xl text-sm font-semibold transition-all cursor-pointer {selectedCategory === 'mail' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'transparent-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'}"
+			class="px-4 py-2 rounded-xl text-sm font-semibold transition-all cursor-pointer
+				{selectedCategory === 'mail'
+					? 'bg-slate-900 text-white border border-slate-900 dark:bg-white dark:text-black dark:border-white shadow-md'
+					: 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 hover:bg-slate-200/70 dark:bg-white/5 dark:hover:bg-white/10 border border-slate-200 hover:border-slate-300 dark:border-white/10 dark:hover:border-white/20'}"
 			on:click={() => (selectedCategory = "mail")}
 		>
 			<span class="flex items-center gap-1.5">
