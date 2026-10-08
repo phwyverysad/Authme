@@ -3,6 +3,7 @@ import * as dialog from "./dialog"
 import { getSettings, setSettings } from "interface/stores/settings"
 import logger from "./logger"
 import { dev } from "../../build.json"
+import { getLanguage } from "./language"
 
 const service = dev ? "authme_dev" : "authme"
 
@@ -30,7 +31,7 @@ export const decryptData = async (data: string): Promise<string> => {
 	const res: string = await invoke("decrypt_data", { data })
 
 	if (res === "error") {
-		dialog.message("Failed to decrypt your codes!\n\n Please restart the app and try again!", { kind: "error" })
+		dialog.message(getLanguage().encryption?.decryptFailed || "Failed to decrypt your vault! Please restart Authme and try again.", { kind: "error" })
 	}
 
 	return res
@@ -43,7 +44,7 @@ export const setEntry = async (name: string, data: string) => {
 	const res = await invoke("set_entry", { name, data, service })
 
 	if (res === "error") {
-		dialog.message("Failed to set the encryption key on your systems keychain!\n\n You can use the password method.", { kind: "error" })
+		dialog.message(getLanguage().encryption?.keychainFailed || "Failed to set encryption key on system keychain. You can use the password method.", { kind: "error" })
 	}
 
 	return res
@@ -56,7 +57,7 @@ export const setEncryptionKey = async (): Promise<string> => {
 		try {
 			const res: string = await invoke("set_encryption_key", { service })
 			if (res === "error") {
-				dialog.message("Failed to set the encryption key on your systems keychain!\n\n Please restart the app and try again!", { kind: "error" })
+				dialog.message(getLanguage().encryption?.keychainFailed || "Failed to set encryption key on system keychain. Please restart Authme and try again.", { kind: "error" })
 			}
 			return res
 		} finally {
@@ -129,7 +130,7 @@ export const createWebAuthnLogin = async () => {
 		currentSettings.security.hardwareKey = res.id
 		setSettings(currentSettings)
 	} catch (error) {
-		dialog.message(`Failed to register your authenticator! This feature might not be supported on your machine. \n\n${error}`, { kind: "error" })
+		dialog.message(`${getLanguage().encryption?.webauthnRegisterFailed || "Failed to register hardware key."} \n\n${error}`, { kind: "error" })
 
 		logger.error(`Failed to register hardware key: ${error}`)
 
@@ -152,12 +153,12 @@ export const verifyWebAuthnLogin = async () => {
 
 		const currentSettings = getSettings()
 		if (res.id !== currentSettings.security.hardwareKey) {
-			dialog.message("Failed to login with your authenticator. The selected hardware key ID does not match the saved key ID.", { kind: "error" })
+			dialog.message(getLanguage().encryption?.webauthnKeyMismatch || "Failed to authenticate. The selected hardware key does not match the saved key.", { kind: "error" })
 
 			return "error"
 		}
 	} catch (error) {
-		dialog.message(`Failed to login with your authenticator. Please try again! \n\n${error}`, { kind: "error" })
+		dialog.message(`${getLanguage().encryption?.webauthnLoginFailed || "Failed to login with your hardware key. Please try again!"} \n\n${error}`, { kind: "error" })
 
 		logger.error(`Failed to login with hardware key: ${error}`)
 

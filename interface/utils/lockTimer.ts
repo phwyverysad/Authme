@@ -45,8 +45,13 @@ export const lockApp = async (notify = true) => {
 	}
 }
 
+let lastThrottleTime = 0
 export const resetIdleTimer = () => {
-	lastActivityTime = Date.now()
+	const now = Date.now()
+	if (now - lastThrottleTime >= 1000) {
+		lastThrottleTime = now
+		lastActivityTime = now
+	}
 }
 
 export const initLockTimer = () => {

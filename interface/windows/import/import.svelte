@@ -387,13 +387,13 @@
 					</div>
 					<div>
 						<h2>Proton Mail</h2>
-						<h3>Sign in with Proton Mail (proton.me)</h3>
+						<h3>{language.mail?.protonDesc}</h3>
 					</div>
 				</div>
 				<div class="mt-4 flex w-full">
 					<button class="button flex items-center gap-2" on:click={() => connectMail("proton")}>
 						<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
-						Sign in with Proton Mail
+						{language.mail?.signInProton}
 					</button>
 				</div>
 			</div>
@@ -406,13 +406,13 @@
 					</div>
 					<div>
 						<h2>Yahoo Mail</h2>
-						<h3>Sign in with your @yahoo.com webmail account</h3>
+						<h3>{language.mail?.yahooDesc}</h3>
 					</div>
 				</div>
 				<div class="mt-4 flex w-full">
 					<button class="button flex items-center gap-2" on:click={() => connectMail("yahoo")}>
 						<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
-						Sign in with Yahoo Mail
+						{language.mail?.signInYahoo}
 					</button>
 				</div>
 			</div>
@@ -425,13 +425,13 @@
 					</div>
 					<div>
 						<h2>iCloud Mail</h2>
-						<h3>Sign in with your Apple ID / @icloud.com account</h3>
+						<h3>{language.mail?.icloudDesc}</h3>
 					</div>
 				</div>
 				<div class="mt-4 flex w-full">
 					<button class="button flex items-center gap-2" on:click={() => connectMail("icloud")}>
 						<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
-						Sign in with iCloud Mail
+						{language.mail?.signInIcloud}
 					</button>
 				</div>
 			</div>
@@ -443,8 +443,8 @@
 						<svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
 					</div>
 					<div>
-						<h2>{language.mail?.customWebmail || "Other Webmail (Custom URL)"}</h2>
-						<h3>{language.mail?.customWebmailDesc || "Specify your corporate or hosting webmail URL"}</h3>
+						<h2>{language.mail?.customWebmail}</h2>
+						<h3>{language.mail?.customWebmailDesc}</h3>
 					</div>
 				</div>
 				<div class="mt-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full max-w-xl">
@@ -456,7 +456,7 @@
 					/>
 					<button class="button flex items-center justify-center gap-2 whitespace-nowrap" on:click={() => connectMail("custom")}>
 						<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
-						{language.common?.confirm || "Connect"}
+						{language.common?.confirm}
 					</button>
 				</div>
 				{#if customWebmailError}

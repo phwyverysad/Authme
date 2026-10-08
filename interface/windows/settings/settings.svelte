@@ -48,34 +48,34 @@
 				<h3>{language.settings.languageText}</h3>
 			</div>
 			<div class="ml-4 sm:ml-8 md:ml-12 flex-shrink-0 flex gap-3">
-				<Select options={["Default", "English", "Hungarian", "Spanish", "French", "Russian", "German", "Chinese", "Polish", "Japanese", "Arabic", "Thai"]} setting={"language"} />
+				<Select options={["Default", "English", "Magyar", "Español", "Français", "Русский", "Deutsch", "中文", "Polski", "日本語", "العربية", "Thai"]} setting={"language"} />
 			</div>
 		</div>
 
 		<div class="transparent-800 mb-4 flex w-full flex-row items-center justify-between rounded-xl p-4 sm:p-5 text-left relative focus-within:z-30">
 			<div>
-				<h2>{language.settings.theme || "Theme"}</h2>
-				<h3>{language.settings.themeText || "Change application appearance (Dark / Light mode)."}</h3>
+				<h2>{language.settings.theme}</h2>
+				<h3>{language.settings.themeText}</h3>
 			</div>
 			<div class="ml-4 sm:ml-8 md:ml-12 flex-shrink-0 flex gap-3">
-				<Select options={[language.settings.darkTheme || "Dark", language.settings.lightTheme || "Light"]} setting={"theme"} />
+				<Select options={[language.settings.darkTheme, language.settings.lightTheme]} setting={"theme"} />
 			</div>
 		</div>
 
 		<div class="transparent-800 mb-4 flex w-full flex-row items-center justify-between rounded-xl p-4 sm:p-5 text-left relative focus-within:z-30">
 			<div>
-				<h2>{language.settings.appScale || "App scale"}</h2>
-				<h3>{language.settings.appScaleText || "Adjust application display scaling (Small, Medium, Large)."}</h3>
+				<h2>{language.settings.appScale}</h2>
+				<h3>{language.settings.appScaleText}</h3>
 			</div>
 			<div class="ml-4 sm:ml-8 md:ml-12 flex-shrink-0 flex gap-3">
-				<Select options={[language.settings.appScaleSmall || "Small (90%)", language.settings.appScaleMedium || "Medium (100%)", language.settings.appScaleLarge || "Large (115%)"]} setting={"appScale"} />
+				<Select options={[language.settings.appScaleSmall, language.settings.appScaleMedium, language.settings.appScaleLarge]} setting={"appScale"} />
 			</div>
 		</div>
 
 		<div class="transparent-800 mb-4 flex w-full flex-row items-center justify-between rounded-xl p-4 sm:p-5 text-left">
 			<div>
-				<h2>{language.settings.rememberWindowPosition || "Remember window position"}</h2>
-				<h3>{language.settings.rememberWindowPositionText || "Restore the last window size and position upon starting Authme."}</h3>
+				<h2>{language.settings.rememberWindowPosition}</h2>
+				<h3>{language.settings.rememberWindowPositionText}</h3>
 			</div>
 			<div class="ml-4 sm:ml-8 md:ml-12 flex-shrink-0 flex gap-3">
 				<Toggle bind:checked={$settings.settings.rememberWindowPosition} on:change={(e) => setRememberWindowPosition(e.detail)} />
@@ -117,43 +117,43 @@
 				<h3>{language.settings.sortCodesText}</h3>
 			</div>
 			<div class="ml-4 sm:ml-8 md:ml-12 flex-shrink-0 flex gap-3">
-				<Select options={["Default", "A-Z", "Z-A"]} setting={"sortCodes"} />
+				<Select options={[language.settings.sortDefault, language.settings.sortAZ, language.settings.sortZA]} setting={"sortCodes"} />
 			</div>
 		</div>
 	</div>
 </div>
 
 <div class="transparent-900 mx-auto my-6 sm:my-10 md:my-14 w-[96%] sm:w-[94%] md:w-[92%] lg:w-[90%] xl:w-4/5 max-w-7xl rounded-2xl p-4 sm:p-6 md:p-8 lg:p-10 text-left">
-	<h1 class="px-2 sm:px-4 md:px-6">{language.settings.security || "Security"}</h1>
+	<h1 class="px-2 sm:px-4 md:px-6">{language.settings.security}</h1>
 
 	<div class="mx-auto flex flex-col items-center justify-center rounded-2xl p-2 sm:p-4 md:p-6">
 		<!-- Lock Timer -->
 		<div class="transparent-800 mb-4 flex w-full flex-row items-center justify-between rounded-xl p-4 sm:p-5 text-left relative focus-within:z-30">
 			<div>
-				<h2>{language.settings.lockTimer || "Lock timer"}</h2>
-				<h3>{language.settings.lockTimerText || "Automatically lock Authme after inactivity or when minimized."}</h3>
+				<h2>{language.settings.lockTimer}</h2>
+				<h3>{language.settings.lockTimerText}</h3>
 			</div>
 			<div class="ml-4 sm:ml-8 md:ml-12 flex-shrink-0 flex gap-3">
-				<Select options={["Never", "30 seconds", "1 minute", "5 minutes", "10 minutes", "30 minutes", "1 hour"]} setting={"lockTimer"} />
+				<Select options={[language.settings.timerNever, language.settings.timer30s, language.settings.timer1m, language.settings.timer5m, language.settings.timer10m, language.settings.timer30m, language.settings.timer1h]} setting={"lockTimer"} />
 			</div>
 		</div>
 
 		<!-- Clear Clipboard Timer -->
 		<div class="transparent-800 mb-4 flex w-full flex-row items-center justify-between rounded-xl p-4 sm:p-5 text-left relative focus-within:z-30">
 			<div>
-				<h2>{language.settings.clearClipboard || "Clear clipboard"}</h2>
-				<h3>{language.settings.clearClipboardText || "Automatically clear copied 2FA code from clipboard."}</h3>
+				<h2>{language.settings.clearClipboard}</h2>
+				<h3>{language.settings.clearClipboardText}</h3>
 			</div>
 			<div class="ml-4 sm:ml-8 md:ml-12 flex-shrink-0 flex gap-3">
-				<Select options={["Never", "10 seconds", "20 seconds", "30 seconds", "1 minute"]} setting={"clearClipboard"} />
+				<Select options={[language.settings.clipNever, language.settings.clip10s, language.settings.clip20s, language.settings.clip30s, language.settings.clip1m]} setting={"clearClipboard"} />
 			</div>
 		</div>
 
 		<!-- Require Password on App Startup Toggle -->
 		<div class="transparent-800 mb-4 flex w-full flex-row items-center justify-between rounded-xl p-4 sm:p-5 text-left">
 			<div>
-				<h2>{language.settings.requirePassword || "Require password on startup"}</h2>
-				<h3>{language.settings.requirePasswordText || "Require entering master password to unlock before accessing Authme"}</h3>
+				<h2>{language.settings.requirePassword}</h2>
+				<h3>{language.settings.requirePasswordText}</h3>
 			</div>
 			<div class="ml-4 sm:ml-8 md:ml-12 flex-shrink-0 flex gap-3">
 				<Toggle controlled checked={$settings.security?.requireAuthentication === true} on:click={handleTogglePasswordRequirement} />
@@ -164,8 +164,8 @@
 		{#if $settings.security?.requireAuthentication === true}
 			<div class="transparent-800 mb-4 flex w-full flex-row items-center justify-between rounded-xl p-4 sm:p-5 text-left">
 				<div>
-					<h2>{language.settings.passwordTitle || "Master password"}</h2>
-					<h3>{language.settings.passwordSubtitle || "Change the master password protecting your 2FA vault."}</h3>
+					<h2>{language.settings.passwordTitle}</h2>
+					<h3>{language.settings.passwordSubtitle}</h3>
 				</div>
 				<div class="ml-4 sm:ml-8 md:ml-12 flex-shrink-0 flex gap-3">
 					<button class="button" on:click={() => activePasswordModal.set(true)}>
@@ -173,7 +173,7 @@
 							<rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
 							<path d="M7 11V7a5 5 0 0 1 10 0v4"/>
 						</svg>
-						{language.settings.changePasswordButton || "Change"}
+						{language.settings.changePasswordButton}
 					</button>
 				</div>
 			</div>
@@ -182,8 +182,8 @@
 		<!-- Reset App (Danger Zone) -->
 		<div class="transparent-800 mb-4 flex w-full flex-row items-center justify-between rounded-xl p-4 sm:p-5 text-left border border-rose-500/20">
 			<div>
-				<h2 class="text-rose-500 font-bold">{language.settings.resetApp || "Reset app"}</h2>
-				<h3>{language.settings.resetAppText || "Erase all 2FA accounts and settings to start fresh."}</h3>
+				<h2 class="text-rose-500 font-bold">{language.settings.resetApp}</h2>
+				<h3>{language.settings.resetAppText}</h3>
 			</div>
 			<div class="ml-4 sm:ml-8 md:ml-12 flex-shrink-0 flex gap-3">
 				<button
@@ -195,7 +195,7 @@
 						<line x1="12" y1="9" x2="12" y2="13" />
 						<line x1="12" y1="17" x2="12.01" y2="17" />
 					</svg>
-					{language.settings.resetAppButton || "Reset"}
+					{language.settings.resetAppButton}
 				</button>
 			</div>
 		</div>
@@ -266,7 +266,7 @@
 
 	<div class="transparent-800 mt-5 flex flex-row items-center justify-between rounded-xl p-5">
 		<div>
-			<h3>2FA Codes</h3>
+			<h3>{language.settings.clearDataCodes}</h3>
 		</div>
 		<div class="ml-20 flex gap-3">
 			<Toggle showLabel={false} bind:checked={clearCodesOption} />
@@ -275,7 +275,7 @@
 
 	<div class="transparent-800 mt-5 flex flex-row items-center justify-between rounded-xl p-5">
 		<div>
-			<h3>Other Settings</h3>
+			<h3>{language.settings.clearDataSettings}</h3>
 		</div>
 		<div class="ml-20 flex gap-3">
 			<Toggle showLabel={false} bind:checked={clearSettingsOption} />

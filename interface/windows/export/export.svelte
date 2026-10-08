@@ -74,7 +74,7 @@
 						<div>
 							<h2>{language.export?.selectAccounts || "Select Accounts"}</h2>
 							<h3 class="flex items-center gap-2 mt-1">
-								<span>{language.export?.selectAccounts || "Accounts selected"}:</span>
+								<span>{language.export?.accountsSelected || "Accounts selected"}:</span>
 								<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-white/10 text-white border border-white/15">
 									{selectedCount} / {$exportAccounts.length}
 								</span>
@@ -172,7 +172,7 @@
 					<div class="max-w-2xl pr-4">
 						<div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/25 text-emerald-300 mb-2">
 							<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-							<span>RECOMMENDED &bull; ALL AUTHENTICATORS</span>
+							<span>{language.export?.recommendedBadge || "RECOMMENDED • ALL AUTHENTICATORS"}</span>
 						</div>
 						<h2>{language.export?.allInOneQrCard || "All-In-One Transfer QR Code (1-3 QR)"}</h2>
 						<h3>{language.export?.allInOneQrCardText || "Google Authenticator migration protocol. Bundles up to 10 accounts per QR code for 1-tap transfer to Google Authenticator, 2FAS, Aegis, Ente, or Raivo."}</h3>
@@ -346,7 +346,7 @@
 						<div>
 							<h2>{language.export?.selectAccounts || "Select Mail Accounts"}</h2>
 							<h3 class="flex items-center gap-2 mt-1">
-								<span>{language.export?.selectAccounts || "Accounts selected"}:</span>
+								<span>{language.export?.accountsSelected || "Accounts selected"}:</span>
 								<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-white/10 text-white border border-white/15">
 									{selectedMailCount} / {$exportMailAccounts.length}
 								</span>
@@ -449,8 +449,8 @@
 				<!-- Mail Format 1: Backup JSON -->
 				<div class="transparent-800 flex w-full flex-col md:flex-row md:items-center justify-between rounded-xl p-6 md:p-8 text-left">
 					<div class="max-w-2xl pr-4">
-						<h2>Export Mail Backup (.json)</h2>
-						<h3>Structured JSON file with complete account configurations and provider metadata.</h3>
+						<h2>{language.export?.exportMailJsonTitle || "Export Mail Backup (.json)"}</h2>
+						<h3>{language.export?.exportMailJsonText || "Structured JSON file with complete account configurations and provider metadata."}</h3>
 					</div>
 
 					<div class="mt-6 md:mt-0 flex-shrink-0">
@@ -461,7 +461,7 @@
 							on:click={() => exportSelectedMailJson(selectedMailAccounts)}
 						>
 							<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-							Export JSON
+							{language.export?.exportMailJsonButton || "Export JSON"}
 						</button>
 					</div>
 				</div>
@@ -469,8 +469,8 @@
 				<!-- Mail Format 2: CSV Spreadsheet -->
 				<div class="transparent-800 flex w-full flex-col md:flex-row md:items-center justify-between rounded-xl p-6 md:p-8 text-left">
 					<div class="max-w-2xl pr-4">
-						<h2>Export CSV Spreadsheet (.csv)</h2>
-						<h3>Spreadsheet containing Provider, Email, Account Name, and Label for Excel or Sheets.</h3>
+						<h2>{language.export?.exportMailCsvTitle || "Export CSV Spreadsheet (.csv)"}</h2>
+						<h3>{language.export?.exportMailCsvText || "Spreadsheet containing Provider, Email, Account Name, and Label for Excel or Sheets."}</h3>
 					</div>
 
 					<div class="mt-6 md:mt-0 flex-shrink-0">
@@ -481,7 +481,7 @@
 							on:click={() => exportSelectedMailCsv(selectedMailAccounts)}
 						>
 							<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
-							Export CSV
+							{language.export?.exportMailCsvButton || "Export CSV"}
 						</button>
 					</div>
 				</div>
@@ -489,8 +489,8 @@
 				<!-- Mail Format 3: Plain Text -->
 				<div class="transparent-800 flex w-full flex-col md:flex-row md:items-center justify-between rounded-xl p-6 md:p-8 text-left">
 					<div class="max-w-2xl pr-4">
-						<h2>Export Plain Text (.txt)</h2>
-						<h3>Clean plain text list of email accounts and connected providers.</h3>
+						<h2>{language.export?.exportMailTxtTitle || "Export Plain Text (.txt)"}</h2>
+						<h3>{language.export?.exportMailTxtText || "Clean plain text list of email accounts and connected providers."}</h3>
 					</div>
 
 					<div class="mt-6 md:mt-0 flex-shrink-0">
@@ -501,7 +501,7 @@
 							on:click={() => exportSelectedMailTxt(selectedMailAccounts)}
 						>
 							<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="21" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="21" y1="18" x2="3" y2="18"/></svg>
-							Export TXT
+							{language.export?.exportMailTxtButton || "Export TXT"}
 						</button>
 					</div>
 				</div>
@@ -531,7 +531,7 @@
 				<div class="text-left pr-4">
 					<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 mb-2">
 						<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-						<span>Google Authenticator Migration Protocol</span>
+						<span>{language.export?.googleMigrationProtocol || "Google Authenticator Migration Protocol"}</span>
 					</div>
 					<h2 class="text-2xl sm:text-3xl font-bold tracking-tight text-white leading-tight">
 						{language.export?.migrationModalTitle || "All-In-One Transfer QR Code"}
@@ -546,7 +546,8 @@
 					type="button"
 					on:click={() => (showMigrationModal = false)}
 					class="text-slate-400 hover:text-white p-2 rounded-full hover:bg-white/10 transition-colors cursor-pointer flex-shrink-0"
-					aria-label="Close"
+					aria-label={language.common?.close || "Close"}
+					title={language.common?.close || "Close"}
 				>
 					<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
 				</button>
@@ -622,10 +623,10 @@
 					<div class="flex flex-col flex-1">
 						<div class="flex items-center justify-between mb-2 pb-2 border-b border-white/10">
 							<span class="text-xs font-bold text-slate-300 uppercase tracking-wider">
-								Accounts in this QR ({currentBatch.accounts.length})
+								{language.export?.accountsInThisQr || "Accounts in this QR"} ({currentBatch.accounts.length})
 							</span>
 							<span class="text-xs text-slate-400 font-medium">
-								Batch {migrationBatchIndex + 1} of {migrationBatches.length}
+								{language.export?.batchIndicator || "Batch"} {migrationBatchIndex + 1} / {migrationBatches.length}
 							</span>
 						</div>
 
@@ -724,7 +725,8 @@
 					type="button"
 					on:click={() => (showQrModal = false)}
 					class="text-slate-400 hover:text-white p-2 rounded-full hover:bg-white/10 transition-colors cursor-pointer flex-shrink-0"
-					aria-label="Close"
+					aria-label={language.common?.close || "Close"}
+					title={language.common?.close || "Close"}
 				>
 					<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
 				</button>
@@ -796,13 +798,13 @@
 						<!-- Metadata Specs -->
 						<div class="flex items-center gap-2 flex-wrap">
 							<span class="text-xs px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-slate-300">
-								Type: <strong class="text-white">{activeQrAccount.type || "TOTP"}</strong>
+								{language.export?.typeLabel || "Type"}: <strong class="text-white">{activeQrAccount.type || "TOTP"}</strong>
 							</span>
 							<span class="text-xs px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-slate-300">
-								Digits: <strong class="text-white">{activeQrAccount.digits || 6}</strong>
+								{language.export?.digitsLabel || "Digits"}: <strong class="text-white">{activeQrAccount.digits || 6}</strong>
 							</span>
 							<span class="text-xs px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-slate-300">
-								Period: <strong class="text-white">{activeQrAccount.period || 30}s</strong>
+								{language.export?.periodLabel || "Period"}: <strong class="text-white">{activeQrAccount.period || 30}s</strong>
 							</span>
 						</div>
 					</div>
@@ -816,7 +818,7 @@
 							title={language.export?.downloadQrPng || "Download QR PNG"}
 						>
 							<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 flex-shrink-0"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-							<span class="truncate">PNG</span>
+							<span class="truncate">{language.export?.qrPng || "PNG"}</span>
 						</button>
 
 						<button
@@ -826,7 +828,7 @@
 							title={language.export?.copyUri || "Copy URI"}
 						>
 							<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 flex-shrink-0"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-							<span class="truncate">Copy URI</span>
+							<span class="truncate">{language.export?.copyUri || "Copy URI"}</span>
 						</button>
 
 						<button
@@ -836,7 +838,7 @@
 							title={language.export?.copySecret || "Copy Secret"}
 						>
 							<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 flex-shrink-0"><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>
-							<span class="truncate">Secret</span>
+							<span class="truncate">{language.export?.copySecret || "Secret"}</span>
 						</button>
 					</div>
 				</div>

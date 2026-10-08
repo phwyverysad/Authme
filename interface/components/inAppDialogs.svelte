@@ -939,7 +939,7 @@
 						{language.edit?.livePreview || "Live Preview"}
 					</span>
 					<span class="text-[10px] font-medium text-slate-500 dark:text-slate-400 bg-slate-200/80 dark:bg-slate-700/80 px-2 py-0.5 rounded-md">
-						2FA Preview
+						{language.edit?.livePreview || "2FA Preview"}
 					</span>
 				</div>
 
@@ -1211,7 +1211,7 @@
 			<div class="my-4 p-4 rounded-2xl bg-white shadow-inner border border-slate-100 dark:border-transparent flex items-center justify-center">
 				<img
 					src={$activeQrModal.qrDataUrl}
-					alt="2FA QR Code"
+					alt={language.export?.qrModalTitle || "2FA QR Code"}
 					class="w-52 h-52 object-contain select-none"
 				/>
 			</div>

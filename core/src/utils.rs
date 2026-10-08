@@ -4,7 +4,8 @@ use rand::{thread_rng, Rng};
 use serde::{Deserialize, Serialize};
 use std::io::Write;
 use std::{env, fs};
-use sysinfo::System;
+use std::sync::OnceLock;
+use sysinfo::{CpuRefreshKind, MemoryRefreshKind, RefreshKind, System};
 use tauri::Manager;
 
 #[tauri::command]
@@ -68,7 +69,9 @@ pub fn write_logs(name: String, message: String) {
     }
 }
 
-#[derive(Serialize, Deserialize)]
+static CACHED_SYSINFO: OnceLock<SystemInfo> = OnceLock::new();
+
+#[derive(Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct SystemInfo {
     pub os_name: String,
@@ -79,8 +82,17 @@ pub struct SystemInfo {
 
 #[tauri::command]
 pub fn system_info() -> SystemInfo {
-    let mut sys = System::new_all();
-    sys.refresh_all();
+    if let Some(info) = CACHED_SYSINFO.get() {
+        return info.clone();
+    }
+
+    let mut sys = System::new_with_specifics(
+        RefreshKind::nothing()
+            .with_cpu(CpuRefreshKind::nothing())
+            .with_memory(MemoryRefreshKind::nothing().with_ram()),
+    );
+    sys.refresh_cpu_all();
+    sys.refresh_memory();
 
     let mut os_name = System::name().unwrap_or_else(|| "Windows".to_string());
     let mut os_arch = env::consts::ARCH.to_string();
@@ -109,7 +121,8 @@ pub fn system_info() -> SystemInfo {
         os_arch,
     };
 
-    res.into()
+    let _ = CACHED_SYSINFO.set(res.clone());
+    res
 }
 
 pub fn try_call_dll_converter(secret: &str) -> Option<Vec<Account>> {

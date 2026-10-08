@@ -94,7 +94,13 @@
 								{/if}
 							</span>
 						{/if}
-						<span class="whitespace-nowrap tracking-tight font-semibold text-[13px]">{cat.name}</span>
+						<span class="whitespace-nowrap tracking-tight font-semibold text-[13px]">
+							{cat.id === 'all'
+								? (language.codes?.allCategories || 'All')
+								: cat.id === 'pinned'
+								? (language.codes?.pinnedCategory || 'Pinned')
+								: cat.name}
+						</span>
 						<span class="text-[11px] px-2 py-0.5 rounded-full font-bold min-w-[20px] text-center
 							{$activeCodeCategory === cat.id
 								? 'bg-white/20 text-white dark:bg-slate-900/15 dark:text-slate-900 font-bold'

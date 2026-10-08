@@ -4,6 +4,7 @@ import { getState, setState } from "../stores/state"
 import { TOTP } from "otpauth"
 import logger from "./logger"
 import { cleanAccountName } from "./icons"
+import { getLanguage } from "./language"
 
 interface ParsedEntry {
 	name: string
@@ -100,7 +101,7 @@ export const textConverter = (text: string, sortNumber: number): LibImportFile =
 				secret: entry.secret,
 			}).generate()
 		} catch (error) {
-			dialog.message("Failed to generate TOTP code from secret. \n\nMake sure your import file is correct!", { kind: "error" })
+			dialog.message(getLanguage().import?.errors?.totpGenFailed || "Failed to generate TOTP code from secret.", { kind: "error" })
 			logger.error(`Failed to generate TOTP code from secret: ${error}`)
 
 			const currentState = getState()

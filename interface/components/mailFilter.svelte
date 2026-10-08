@@ -89,14 +89,14 @@
 
 	$: isFilterActive = selectedProvider !== "all" || unreadOnly
 
-	const providers = [
-		{ id: "all", label: "All" },
+	$: providers = [
+		{ id: "all", label: language.mail?.allProviders || "All" },
 		{ id: "gmail", label: "Gmail" },
 		{ id: "outlook", label: "Outlook" },
 		{ id: "yahoo", label: "Yahoo" },
 		{ id: "proton", label: "Proton" },
 		{ id: "icloud", label: "iCloud" },
-		{ id: "custom", label: "Webmail" },
+		{ id: "custom", label: language.mail?.customWebmail || "Webmail" },
 	]
 
 	function resetFilters() {

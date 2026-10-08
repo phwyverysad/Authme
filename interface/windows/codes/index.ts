@@ -5,7 +5,7 @@ import { getSettings, setSettings } from "../../stores/settings"
 import { getState, setState } from "../../stores/state"
 import { decryptData, encryptData, setEncryptionKey } from "interface/utils/encryption"
 import logger from "interface/utils/logger"
-import { getLanguage, language } from "@utils/language"
+import { getLanguage, language, currentLanguage } from "@utils/language"
 import { getServiceIcon, fetchBrandIcon, getCachedIcon, normalizeCategory, extractPrefix, cleanAccountName } from "../../utils/icons"
 import { getAccurateTimestamp } from "../../utils/timeSync"
 import { writable } from "svelte/store"
@@ -24,6 +24,25 @@ export interface CodeCategory {
 export const activeCodeCategory = writable<string>("all")
 export const availableCodeCategories = writable<CodeCategory[]>([])
 export const hasCodesStore = writable<boolean>(false)
+
+// Keep category names synchronized with language store
+currentLanguage.subscribe((curLang) => {
+	if (!curLang) return
+	if (typeof invalidateVaultCache === "function") {
+		invalidateVaultCache()
+	}
+	availableCodeCategories.update((cats) => {
+		return cats.map((c) => {
+			if (c.id === "all") {
+				return { ...c, name: curLang.codes?.allCategories || "All" }
+			}
+			if (c.id === "pinned") {
+				return { ...c, name: curLang.codes?.pinnedCategory || "Pinned" }
+			}
+			return c
+		})
+	})
+})
 
 export { normalizeCategory }
 
@@ -1089,7 +1108,7 @@ export const generateCodeElements = (codes: LibImportFile) => {
 							type="button"
 							id="moreBtn${i}"
 							class="w-6.5 h-6.5 sm:w-7 sm:h-7 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/70 dark:hover:bg-slate-700/70 transition-all active:scale-90 focus:outline-none cursor-pointer"
-							title="${language.common.moreOptions || 'More options'} ${language.codes?.rightClickHint || '(Right-click)'}"
+							title="${language.common.moreOptions} ${language.codes?.rightClickHint || ''}"
 						>
 							<svg class="w-4 h-4 pointer-events-none" fill="currentColor" viewBox="0 0 20 20">
 								<path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"/>
@@ -1100,7 +1119,7 @@ export const generateCodeElements = (codes: LibImportFile) => {
 			</div>
 			`
 
-			element.classList.add("code", "group", "cursor-pointer", "transition-all", "duration-200", "hover:scale-[1.01]", "select-none", "relative")
+			element.classList.add("code", "group", "cursor-pointer", "hover:scale-[1.01]", "select-none", "relative")
 			if (isPinned) {
 				element.classList.add("code-pinned")
 			}
@@ -1172,7 +1191,7 @@ export const generateCodeElements = (codes: LibImportFile) => {
 									inner.innerHTML = normalizedSvg
 									container.setAttribute(
 										"style",
-										"background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); backdrop-filter: blur(8px);"
+										"background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12);"
 									)
 								} else {
 									inner.innerHTML = `<img src="${iconUrl}" alt="${primaryTitle}" class="w-7 h-7 md:w-8 md:h-8 object-contain drop-shadow transition-opacity duration-300" style="opacity: 0;" />`
@@ -1182,7 +1201,7 @@ export const generateCodeElements = (codes: LibImportFile) => {
 											img.style.opacity = "1"
 											container.setAttribute(
 												"style",
-												"background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); backdrop-filter: blur(8px);"
+												"background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12);"
 											)
 										}
 									}

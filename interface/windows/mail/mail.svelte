@@ -1199,7 +1199,7 @@
 									<path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" stroke-width="2" />
 								</svg>
 							</span>
-							<span class="whitespace-nowrap tracking-tight font-semibold text-[13px]">Webmail</span>
+							<span class="whitespace-nowrap tracking-tight font-semibold text-[13px]">{language.mail?.customWebmail || "Webmail"}</span>
 							<span class="text-[11px] px-2 py-0.5 rounded-full font-bold min-w-[20px] text-center
 								{mailProviderFilter === 'custom' && !mailUnreadOnly
 									? 'bg-white/20 text-white dark:bg-slate-900/15 dark:text-slate-900 font-bold'
@@ -1514,7 +1514,7 @@
 					<path d="M3 8l7.89 5.26a2 2 0 0 0 2.22 0L21 8M5 19h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2z"/>
 				</svg>
 			</div>
-			<span class="text-slate-700 dark:text-slate-200 group-hover/menuitem:text-slate-900 dark:group-hover/menuitem:text-white">Open Inbox</span>
+			<span class="text-slate-700 dark:text-slate-200 group-hover/menuitem:text-slate-900 dark:group-hover/menuitem:text-white">{language.mail?.openInbox}</span>
 		</button>
 
 		<!-- Edit -->
@@ -1531,7 +1531,7 @@
 					<path d="m15 5 4 4" />
 				</svg>
 			</div>
-			<span class="text-slate-700 dark:text-slate-200 group-hover/menuitem:text-slate-900 dark:group-hover/menuitem:text-white">Edit</span>
+			<span class="text-slate-700 dark:text-slate-200 group-hover/menuitem:text-slate-900 dark:group-hover/menuitem:text-white">{language.common?.edit}</span>
 		</button>
 
 		<!-- Toggle Pin / Star Action -->
@@ -1572,7 +1572,7 @@
 					<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
 				</svg>
 			</div>
-			<span class="text-slate-700 dark:text-slate-200 group-hover/menuitem:text-slate-900 dark:group-hover/menuitem:text-white">Copy Email</span>
+			<span class="text-slate-700 dark:text-slate-200 group-hover/menuitem:text-slate-900 dark:group-hover/menuitem:text-white">{language.mail?.copyEmail}</span>
 		</button>
 
 		{#if activeMailMenu?.account?.password}
@@ -1589,7 +1589,7 @@
 						<path d="M21 2l-2 2m-1.5 1.5L14 9m0 0l-1.5-1.5M14 9l1.5 1.5M14 9l-3 3m0 0l-1.5-1.5M11 12l1.5 1.5M11 12l-1 1M8 15a4 4 0 1 1-4-4c1.1 0 2.1.45 2.83 1.17L14 5l3-3 5 5-7.17 7.17A3.98 3.98 0 0 1 8 15z" />
 					</svg>
 				</div>
-				<span class="text-slate-700 dark:text-slate-200 group-hover/menuitem:text-slate-900 dark:group-hover/menuitem:text-white">Copy Password</span>
+				<span class="text-slate-700 dark:text-slate-200 group-hover/menuitem:text-slate-900 dark:group-hover/menuitem:text-white">{language.mail?.copyPassword}</span>
 			</button>
 		{/if}
 
@@ -1608,7 +1608,7 @@
 					<line x1="10" y1="14" x2="21" y2="3"/>
 				</svg>
 			</div>
-			<span class="text-slate-700 dark:text-slate-200 group-hover/menuitem:text-slate-900 dark:group-hover/menuitem:text-white">Open in Browser</span>
+			<span class="text-slate-700 dark:text-slate-200 group-hover/menuitem:text-slate-900 dark:group-hover/menuitem:text-white">{language.mail?.openInBrowser}</span>
 		</button>
 
 		<!-- Divider -->
@@ -1629,7 +1629,7 @@
 					<path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
 				</svg>
 			</div>
-			<span class="text-slate-700 dark:text-slate-200 group-hover/menuitem:text-rose-600 dark:group-hover/menuitem:text-rose-400 transition-colors">Delete</span>
+			<span class="text-slate-700 dark:text-slate-200 group-hover/menuitem:text-rose-600 dark:group-hover/menuitem:text-rose-400 transition-colors">{language.common?.delete}</span>
 		</button>
 	</div>
 {/if}
@@ -1696,7 +1696,7 @@
 					</div>
 					<div>
 						<p class="text-sm font-bold text-slate-800 dark:text-slate-100">Microsoft Outlook</p>
-						<p class="text-xs text-slate-400">@outlook.com, @hotmail.com, Office 365</p>
+						<p class="text-xs text-slate-400">{language.mail?.signInOutlook}</p>
 					</div>
 				</button>
 
@@ -1713,7 +1713,7 @@
 					</div>
 					<div>
 						<p class="text-sm font-bold text-slate-800 dark:text-slate-100">Yahoo Mail</p>
-						<p class="text-xs text-slate-400">@yahoo.com, @ymail.com</p>
+						<p class="text-xs text-slate-400">{language.mail?.yahooDesc}</p>
 					</div>
 				</button>
 
@@ -1730,7 +1730,7 @@
 					</div>
 					<div>
 						<p class="text-sm font-bold text-slate-800 dark:text-slate-100">Proton Mail</p>
-						<p class="text-xs text-slate-400">@proton.me, @pm.me</p>
+						<p class="text-xs text-slate-400">{language.mail?.protonDesc}</p>
 					</div>
 				</button>
 
@@ -1747,7 +1747,7 @@
 					</div>
 					<div>
 						<p class="text-sm font-bold text-slate-800 dark:text-slate-100">iCloud Mail</p>
-						<p class="text-xs text-slate-400">@icloud.com, Apple ID</p>
+						<p class="text-xs text-slate-400">{language.mail?.icloudDesc}</p>
 					</div>
 				</button>
 
@@ -1830,19 +1830,19 @@
 			aria-modal="true"
 			class="relative w-full max-w-sm rounded-3xl p-6 shadow-2xl border text-left bg-white/95 dark:bg-[#0f172a]/95 backdrop-blur-2xl text-slate-900 dark:text-white border-slate-200/90 dark:border-slate-700/80 select-none"
 		>
-			<h2 class="text-lg font-bold text-slate-900 dark:text-white mb-1">Edit Account Details</h2>
+			<h2 class="text-lg font-bold text-slate-900 dark:text-white mb-1">{language.mail?.editModalTitle}</h2>
 			<p class="text-xs text-slate-500 dark:text-slate-400 mb-4">{editingAccount.email}</p>
 
 			<div class="space-y-4">
 				<div>
 					<label for="edit_account_name" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-						Display Name
+						{language.mail?.displayName}
 					</label>
 					<input
 						id="edit_account_name"
 						type="text"
 						bind:value={editName}
-						placeholder="e.g. {editingAccount.name || 'Account Name'}"
+						placeholder="e.g. {editingAccount.name || (language.mail?.accountNamePlaceholder || 'Account Name')}"
 						on:keydown={(e) => e.key === "Enter" && saveAccountEdit()}
 						class="w-full px-4 py-2.5 rounded-2xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-sky-500"
 					/>
@@ -1851,7 +1851,7 @@
 				<div>
 					<div class="flex items-center justify-between mb-1">
 						<label for="edit_account_label" class="text-xs font-semibold text-slate-700 dark:text-slate-300">
-							Label
+							{language.mail?.label}
 						</label>
 						<div class="flex items-center gap-1">
 							{#each PRESET_LABELS as l}
@@ -1869,7 +1869,7 @@
 						id="edit_account_label"
 						type="text"
 						bind:value={editLabel}
-						placeholder="e.g. Personal, Work"
+						placeholder={language.mail?.labelPlaceholder}
 						on:keydown={(e) => e.key === "Enter" && saveAccountEdit()}
 						class="w-full px-4 py-2.5 rounded-2xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-sky-500"
 					/>
@@ -1878,7 +1878,7 @@
 				{#if editingAccount.provider === "custom"}
 					<div>
 						<label for="edit_account_custom_url" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-							Webmail URL
+							{language.mail?.webmailUrl}
 						</label>
 						<input
 							id="edit_account_custom_url"
@@ -1893,13 +1893,13 @@
 
 				<div>
 					<label for="edit_account_password" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-						Password (Optional - for quick copy)
+						{language.mail?.passwordOptional}
 					</label>
 					<input
 						id="edit_account_password"
 						type="password"
 						bind:value={editPassword}
-						placeholder="Leave blank to keep unchanged"
+						placeholder={language.mail?.leaveBlankUnchanged}
 						on:keydown={(e) => e.key === "Enter" && saveAccountEdit()}
 						class="w-full px-4 py-2.5 rounded-2xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-sky-500"
 					/>
@@ -1912,14 +1912,14 @@
 					on:click={closeEditModal}
 					class="py-2 px-4 rounded-xl text-xs font-semibold border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
 				>
-					Cancel
+					{language.common?.cancel}
 				</button>
 				<button
 					type="button"
 					on:click={saveAccountEdit}
 					class="py-2 px-4 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white shadow-md cursor-pointer"
 				>
-					Save Changes
+					{language.common?.saveChanges || language.edit?.saveChanges}
 				</button>
 			</div>
 		</div>

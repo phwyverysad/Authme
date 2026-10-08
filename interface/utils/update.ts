@@ -7,6 +7,7 @@ import { markdownConverter } from "./convert"
 import logger from "./logger"
 import { open } from "./navigate"
 import { check, Update } from "@tauri-apps/plugin-updater"
+import { getLanguage } from "./language"
 
 const state = getState()
 let updateObj: Update // TODO: should be an easier way
@@ -43,8 +44,10 @@ export const installUpdate = async () => {
 	if (system !== "windows") {
 		open("https://github.com/phwyverysad/Authme/releases")
 	} else {
-		document.querySelector(".updateText").textContent = "Downloading update... Please wait!"
-		document.querySelector(".installUpdate").style.display = "none"
+		const el = document.querySelector(".updateText")
+		if (el) el.textContent = getLanguage().update?.downloading || "Downloading update... Please wait!"
+		const btn = document.querySelector<HTMLElement>(".installUpdate")
+		if (btn) btn.style.display = "none"
 
 		await updateObj.downloadAndInstall()
 		await relaunch()

@@ -13,7 +13,7 @@
 		<Transition enter="transition duration-100 ease-out" enterFrom="transform scale-95 opacity-0" enterTo="transform scale-100 opacity-100" leave="transition duration-75 ease-out" leaveFrom="transform scale-100 opacity-100" leaveTo="transform scale-95 opacity-0">
 			<div class="absolute z-[9999] mt-1.5 w-full rounded-2xl bg-white/95 dark:bg-[#0f172a]/95 backdrop-blur-2xl border border-slate-200/90 dark:border-slate-700/80 shadow-2xl dark:shadow-black/60 dark:ring-1 dark:ring-white/10 overflow-hidden">
 				<ListboxOptions class="max-h-60 overflow-auto p-1.5 text-base leading-6 focus:outline-none sm:text-sm sm:leading-5">
-					{#each options as name (name)}
+					{#each options as name, idx (idx)}
 						<ListboxOption
 							value={name}
 							class={({ active, selected }) => {

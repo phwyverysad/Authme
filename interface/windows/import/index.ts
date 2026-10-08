@@ -41,7 +41,7 @@ export const chooseImages = async () => {
 
 			if (!results || results.length === 0) {
 				logger.error(`No QR code found on the #${i + 1} picture`)
-				dialog.message(`No QR code found on the #${i + 1} picture! \n\nPlease try again with another picture!`, { kind: "error" })
+				dialog.message(language.import?.errors?.noQrFound || "No QR code found on the picture.", { kind: "error" })
 				continue
 			}
 
@@ -55,7 +55,7 @@ export const chooseImages = async () => {
 					const converted = await migrationImageConverter(res.rawValue)
 
 					if (converted === "") {
-						dialog.message("Failed to decode QR code(s). \n\nPlease try again with another picture!", { kind: "error" })
+						dialog.message(language.import?.errors?.decodeFailed || "Failed to decode QR code(s).", { kind: "error" })
 					} else {
 						importString += converted
 						importedAny = true
@@ -64,11 +64,11 @@ export const chooseImages = async () => {
 			} else {
 				// Wrong QR code found
 				logger.error(`Error while reading QR code: ${res.rawValue}`)
-				dialog.message(`Wrong QR code found on the #${i + 1} picture! \n\nPlease try again with another picture!`, { kind: "error" })
+				dialog.message(language.import?.errors?.wrongQr || "Wrong QR code found on the picture.", { kind: "error" })
 			}
 		} catch (error) {
 			logger.error(`Error while reading QR code: ${error}`)
-			dialog.message(`No QR code found on the #${i + 1} picture! \n\nPlease try again with another picture!`, { kind: "error" })
+			dialog.message(language.import?.errors?.noQrFound || "No QR code found on the picture.", { kind: "error" })
 		}
 	}
 
@@ -197,11 +197,11 @@ export const manualEntry = () => {
 	let name = (document.querySelector(".description") as HTMLInputElement)?.value?.trim() ?? ""
 
 	if (issuer === "") {
-		return dialog.message("The name field is required. \n\nPlease try again!", { kind: "error" })
+		return dialog.message(language.import?.errors?.nameRequired || "The name field is required.", { kind: "error" })
 	}
 
 	if (secret === "") {
-		return dialog.message("The secret field is required. \n\nPlease try again!", { kind: "error" })
+		return dialog.message(language.import?.errors?.secretRequired || "The secret field is required.", { kind: "error" })
 	}
 
 	if (name === "") {
@@ -405,7 +405,7 @@ export const protonFile = async () => {
 		let importString = ""
 
 		if (!file.entries) {
-			return dialog.message("No entries found in the selected file! \n\nPlease try again with another file!", { kind: "error" })
+			return dialog.message(language.import?.errors?.noEntriesInFile || "No entries found in the selected file!", { kind: "error" })
 		}
 
 		for (let i = 0; i < file.entries.length; i++) {
@@ -463,7 +463,8 @@ export const captureScreen = async () => {
 	const videoElement: HTMLVideoElement = document.querySelector(".video")
 	let interval: NodeJS.Timeout
 
-	document.querySelector(".dialog1Title").textContent = "Capture screen import"
+	const titleEl = document.querySelector(".dialog1Title")
+	if (titleEl) titleEl.textContent = language.import?.screenCapture || "Screen capture"
 
 	try {
 		videoElement.srcObject = await navigator.mediaDevices.getDisplayMedia({ audio: false })
@@ -500,7 +501,7 @@ export const captureScreen = async () => {
 					const converted = await migrationImageConverter(res.rawValue)
 
 					if (converted === "") {
-						return dialog.message("Failed to decode QR code(s). \n\nPlease try again with another picture!", { kind: "error" })
+						return dialog.message(language.import?.errors?.decodeFailed || "Failed to decode QR code(s).", { kind: "error" })
 					} else {
 						importString += converted
 					}
@@ -519,7 +520,7 @@ export const captureScreen = async () => {
 			} else {
 				// Wrong QR code found
 				logger.error(`Wrong type of QR code found during screen capture: ${JSON.stringify(res)}`)
-				dialog.message("Wrong type of QR code found during screen capture! \n\nPlease try again with another picture!", { kind: "error" })
+				dialog.message(language.import?.errors?.wrongQr || "Wrong type of QR code found.", { kind: "error" })
 
 				clearInterval(interval)
 				track.stop()
@@ -532,7 +533,7 @@ export const captureScreen = async () => {
 		interval = setInterval(detect, 1000)
 	} catch (err) {
 		logger.error(`Error during screen capture: ${err}`)
-		dialog.message(`Error occurred during the screen capture: \n\n${err}`, { kind: "error" })
+		dialog.message(`${language.common?.error || "Error"}: \n\n${err}`, { kind: "error" })
 
 		dialogElement.close()
 	}
@@ -564,17 +565,16 @@ const webcamAvailable = async () => {
 export const useWebcam = async () => {
 	const hasWebcam = await webcamAvailable()
 
-	document.querySelector(".dialog1Title").textContent = "Webcam import"
+	const titleEl = document.querySelector(".dialog1Title")
+	if (titleEl) titleEl.textContent = language.import?.webcam || "Webcam"
 
 	if (hasWebcam === false) {
 		// Not found webcam
-		dialog.message("Not found webcam! \n\nPlease check if your webcam is working correctly or not used by another application.", { kind: "error" })
+		dialog.message(language.import?.errors?.webcamNotFound || "Webcam not found!", { kind: "error" })
 	} else {
 		const dialogElement: LibDialogElement = document.querySelector(".dialog1")
 		const videoElement: HTMLVideoElement = document.querySelector(".video")
 		let interval: NodeJS.Timeout
-
-		document.querySelector(".dialog1Title").textContent = "Webcam import"
 
 		try {
 			videoElement.srcObject = await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: "environment" } })
@@ -611,7 +611,7 @@ export const useWebcam = async () => {
 						const converted = await migrationImageConverter(res.rawValue)
 
 						if (converted === "") {
-							return dialog.message("Failed to decode QR code(s). \n\nPlease try again with another picture!", { kind: "error" })
+							return dialog.message(language.import?.errors?.decodeFailed || "Failed to decode QR code(s).", { kind: "error" })
 						} else {
 							importString += converted
 						}
@@ -629,7 +629,7 @@ export const useWebcam = async () => {
 					navigate("codes")
 				} else {
 					// Wrong QR code found
-					dialog.message("Wrong type of QR code found during webcam import! \n\nPlease try again with another picture!", { kind: "error" })
+					dialog.message(language.import?.errors?.wrongQr || "Wrong type of QR code found.", { kind: "error" })
 					logger.error(`Wrong type of QR code found during webcam import: ${JSON.stringify(res)}`)
 
 					clearInterval(interval)
@@ -643,7 +643,7 @@ export const useWebcam = async () => {
 			interval = setInterval(detect, 1000)
 		} catch (err) {
 			logger.error(`Error occurred while using the webcam: ${err}`)
-			dialog.message(`Error occurred while using the webcam:: \n\n${err}`, { kind: "error" })
+			dialog.message(`${language.common?.error || "Error"}: \n\n${err}`, { kind: "error" })
 
 			dialogElement.close()
 		}

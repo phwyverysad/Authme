@@ -10,6 +10,8 @@ import * as process from "@tauri-apps/plugin-process"
 import * as clipboard from "@tauri-apps/plugin-clipboard-manager"
 import { revealItemInDir } from "@tauri-apps/plugin-opener"
 
+import { getLanguage } from "interface/utils/language"
+
 export interface SystemInfo {
 	osName: string
 	osArch: string
@@ -17,8 +19,27 @@ export interface SystemInfo {
 	totalMem: number
 }
 
+let cachedTauriVersion = ""
+let cachedSystemInfo: SystemInfo | null = null
+
+export const prefetchAboutInfo = async () => {
+	try {
+		if (!cachedTauriVersion) cachedTauriVersion = await app.getTauriVersion()
+		if (!cachedSystemInfo) cachedSystemInfo = await invoke<SystemInfo>("system_info")
+	} catch (e) {}
+}
+
+if (typeof window !== "undefined") {
+	prefetchAboutInfo().catch(() => {})
+}
+
 export const about = async () => {
-	const tauriVersion = await app.getTauriVersion()
+	const curLang = getLanguage()
+	const ab = (curLang as any).about || {}
+
+	if (!cachedTauriVersion) {
+		cachedTauriVersion = await app.getTauriVersion().catch(() => "2.11.5")
+	}
 	const osVersion = os.version()
 
 	// Browser version
@@ -41,20 +62,32 @@ export const about = async () => {
 	}
 
 	// System info
-	const systemInfo: SystemInfo = await invoke("system_info")
+	if (!cachedSystemInfo) {
+		cachedSystemInfo = await invoke<SystemInfo>("system_info").catch(() => ({
+			osName: "Windows",
+			osArch: "x64",
+			cpuName: "Processor",
+			totalMem: 16 * 1024 * 1024 * 1024,
+		}))
+	}
 
-	const cpu = systemInfo.cpuName
+	const cpu = cachedSystemInfo.cpuName
 		.split("@")[0]
 		.replaceAll("(R)", "")
 		.replaceAll("(TM)", "")
 		.replace(/ +(?= )/g, "")
-	const memory = `${Math.round(systemInfo.totalMem / 1024 / 1024 / 1024)} GB`
-	const osName = systemInfo.osName
-	const osArch = systemInfo.osArch
+	const memory = `${Math.round(cachedSystemInfo.totalMem / 1024 / 1024 / 1024)} GB`
+	const osName = cachedSystemInfo.osName
+	const osArch = cachedSystemInfo.osArch
 
-	const info = `Authme: ${build.version} \n\nTauri: ${tauriVersion}\nRuntime: ${runtimeVersion}\n\nOS version: ${osName} ${osArch} ${osVersion}\nHardware info: ${cpu} ${memory} RAM\n\nRelease date: ${build.date}\nBuild number: ${build.number}\n\nGitHub: https://github.com/phwyverysad/Authme\nDeveloper: phwyverysad`
+	const info = `Authme: ${build.version}\n\n${ab.tauri || "Tauri"}: ${cachedTauriVersion}\n${ab.runtime || "Runtime"}: ${runtimeVersion}\n\n${ab.osVersion || "OS version"}: ${osName} ${osArch} ${osVersion}\n${ab.hardwareInfo || "Hardware info"}: ${cpu} ${memory} ${ab.ram || "RAM"}\n\n${ab.releaseDate || "Release date"}: ${build.date}\n${ab.buildNumber || "Build number"}: ${build.number}\n\n${ab.github || "GitHub"}: https://github.com/phwyverysad/Authme\n${ab.developer || "Developer"}: phwyverysad`
 
-	const res = await dialog.confirm(info, { cancelLabel: "Close", okLabel: "Open GitHub" })
+	const res = await dialog.confirm(info, {
+		title: ab.dialogTitle || "Authme",
+		kind: "info",
+		cancelLabel: ab.close || curLang.common?.close || "Close",
+		okLabel: ab.openGithub || "Open GitHub",
+	})
 
 	if (res) {
 		open("https://github.com/phwyverysad/Authme")
@@ -70,7 +103,8 @@ export const clearData = async (clearCodesOption: boolean, clearSettingsOption: 
 
 	// clear codes
 	if (clearCodesOption && !clearSettingsOption) {
-		const confirm0 = await dialog.ask("Are you sure you want to clear 2FA codes? \n\nThis cannot be undone!", { kind: "warning" })
+		const curLang = getLanguage()
+		const confirm0 = await dialog.ask(curLang.settings?.confirmClearCodes || "Are you sure you want to clear 2FA codes? \n\nThis cannot be undone!", { kind: "warning" })
 
 		if (confirm0 === false) {
 			return
@@ -86,7 +120,8 @@ export const clearData = async (clearCodesOption: boolean, clearSettingsOption: 
 
 	// clear settings
 	if (!clearCodesOption && clearSettingsOption) {
-		const confirm0 = await dialog.ask("Are you sure you want to clear all settings? \n\nThis cannot be undone!", { kind: "warning" })
+		const curLang = getLanguage()
+		const confirm0 = await dialog.ask(curLang.settings?.confirmClearSettings || "Are you sure you want to clear all settings? \n\nThis cannot be undone!", { kind: "warning" })
 
 		if (confirm0 === false) {
 			return
@@ -109,13 +144,14 @@ export const clearData = async (clearCodesOption: boolean, clearSettingsOption: 
 
 	// clear everything
 	if (clearCodesOption && clearSettingsOption) {
-		const confirm0 = await dialog.ask("Are you sure you want to clear all data? \n\nThis cannot be undone!", { kind: "warning" })
+		const curLang = getLanguage()
+		const confirm0 = await dialog.ask(curLang.settings?.confirmClearAllData || "Are you sure you want to clear all data? \n\nThis cannot be undone!", { kind: "warning" })
 
 		if (confirm0 === false) {
 			return
 		}
 
-		const confirm1 = await dialog.ask("Are you absolutely sure? \n\nThere is no way back!", { kind: "warning" })
+		const confirm1 = await dialog.ask(curLang.settings?.confirmClearAllDataFinal || "Are you absolutely sure? \n\nThere is no way back!", { kind: "warning" })
 
 		if (confirm1 === true) {
 			localStorage.clear()
