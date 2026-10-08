@@ -41,7 +41,7 @@ export const installUpdate = async () => {
 	const system = os.type()
 
 	if (system !== "windows") {
-		open("https://authme.levminer.com/#downloads")
+		open("https://github.com/phwyverysad/Authme/releases")
 	} else {
 		document.querySelector(".updateText").textContent = "Downloading update... Please wait!"
 		document.querySelector(".installUpdate").style.display = "none"
@@ -52,6 +52,6 @@ export const installUpdate = async () => {
 }
 
 export const showReleaseNotes = async () => {
-	const res = await (await fetch("https://api.github.com/repos/Levminer/authme/releases/latest")).json()
+	const res = await (await fetch("https://api.github.com/repos/phwyverysad/Authme/releases/latest")).json()
 	dialog.message(markdownConverter(res.body.split("Other")[0]))
 }

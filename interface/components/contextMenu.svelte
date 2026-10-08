@@ -56,7 +56,7 @@
 		const clean = cleanAccountName(item.name, item.issuer)
 		if (clean) {
 			await clipboard.writeText(clean)
-			showToast(`${language.codes?.copyAccountSuccess || "คัดลอก ชื่อบัญชี / อีเมล แล้ว"}: ${clean}`, "success")
+			showToast(`${language.codes?.copyAccountSuccess || "Account / Email copied to clipboard"}: ${clean}`, "success")
 		}
 	}
 
@@ -200,7 +200,7 @@
 					</svg>
 				</div>
 				<span class="text-slate-700 dark:text-slate-200 group-hover:text-slate-900 dark:group-hover:text-white truncate">
-					{language.codes?.copyAccount || "คัดลอก ชื่อบัญชี / อีเมล"}
+					{language.codes?.copyAccount || "Copy Account / Email"}
 				</span>
 			</button>
 		{/if}
@@ -258,7 +258,7 @@
 				{/if}
 			</div>
 			<span class="text-slate-700 dark:text-slate-200 group-hover:text-slate-900 dark:group-hover:text-white">
-				{$activeContextMenu.pinned ? (language.codes?.unpin || "ยกเลิกการปักหมุด") : (language.codes?.pinToTop || "ปักหมุดไว้บนสุด")}
+				{$activeContextMenu.pinned ? (language.codes?.unpin || "Unpin from top") : (language.codes?.pinToTop || "Pin to top")}
 			</span>
 		</button>
 

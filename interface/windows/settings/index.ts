@@ -1,7 +1,7 @@
 import build from "../../../build.json"
 import { path, app, webviewWindow } from "@tauri-apps/api"
 import { invoke } from "@tauri-apps/api/core"
-import { navigate } from "../../utils/navigate"
+import { navigate, open } from "../../utils/navigate"
 import { deleteEncryptionKey } from "interface/utils/encryption"
 import { getSettings, setSettings } from "interface/stores/settings"
 import * as os from "@tauri-apps/plugin-os"
@@ -52,11 +52,12 @@ export const about = async () => {
 	const osName = systemInfo.osName
 	const osArch = systemInfo.osArch
 
-	const info = `Authme: ${build.version} \n\nTauri: ${tauriVersion}\nRuntime: ${runtimeVersion}\n\nOS version: ${osName} ${osArch} ${osVersion}\nHardware info: ${cpu} ${memory} RAM\n\nRelease date: ${build.date}\nBuild number: ${build.number}\n\nCreated by: Lőrik Levente`
+	const info = `Authme: ${build.version} \n\nTauri: ${tauriVersion}\nRuntime: ${runtimeVersion}\n\nOS version: ${osName} ${osArch} ${osVersion}\nHardware info: ${cpu} ${memory} RAM\n\nRelease date: ${build.date}\nBuild number: ${build.number}\n\nGitHub: https://github.com/phwyverysad/Authme\nDeveloper: phwyverysad`
 
-	const res = await dialog.confirm(info, { cancelLabel: "Close", okLabel: "Copy" })
+	const res = await dialog.confirm(info, { cancelLabel: "Close", okLabel: "Open GitHub" })
 
 	if (res) {
+		open("https://github.com/phwyverysad/Authme")
 		clipboard.writeText(info)
 	}
 }

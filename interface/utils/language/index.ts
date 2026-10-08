@@ -12,27 +12,53 @@ import { settings, getSettings } from "@stores/settings"
 import { localeAR } from "@utils/language/ar"
 import { localeTH } from "@utils/language/th"
 
+function deepMerge(target: any, source: any): any {
+	if (!source) return target
+	const output = Array.isArray(target) ? [...target] : { ...target }
+	for (const key of Object.keys(source)) {
+		const srcVal = source[key]
+		if (srcVal !== undefined && srcVal !== null) {
+			if (
+				typeof srcVal === "object" &&
+				!Array.isArray(srcVal) &&
+				output[key] &&
+				typeof output[key] === "object" &&
+				!Array.isArray(output[key])
+			) {
+				output[key] = deepMerge(output[key], srcVal)
+			} else {
+				output[key] = srcVal
+			}
+		}
+	}
+	return output
+}
+
 export const getLanguage = (forcedLang?: number): typeof localeEN => {
 	const sysLang = typeof navigator !== "undefined" ? navigator.language : "en"
 	const curSettings = getSettings()
 	const langSetting = forcedLang !== undefined ? forcedLang : Number(curSettings?.settings?.language ?? 0)
 
+	let selected: any = localeEN
 	if (langSetting === 0) {
-		if (sysLang.startsWith("hu")) return localeHU as typeof localeEN
-		if (sysLang.startsWith("es")) return localeES as typeof localeEN
-		if (sysLang.startsWith("fr")) return localeFR as typeof localeEN
-		if (sysLang.startsWith("ru")) return localeRU as typeof localeEN
-		if (sysLang.startsWith("de")) return localeDE as typeof localeEN
-		if (sysLang.startsWith("zh")) return localeZH as typeof localeEN
-		if (sysLang.startsWith("pl")) return localePL as typeof localeEN
-		if (sysLang.startsWith("ja")) return localeJA as typeof localeEN
-		if (sysLang.startsWith("ar")) return localeAR as typeof localeEN
-		if (sysLang.startsWith("th")) return localeTH as typeof localeEN
-		return localeEN
+		if (sysLang.startsWith("hu")) selected = localeHU
+		else if (sysLang.startsWith("es")) selected = localeES
+		else if (sysLang.startsWith("fr")) selected = localeFR
+		else if (sysLang.startsWith("ru")) selected = localeRU
+		else if (sysLang.startsWith("de")) selected = localeDE
+		else if (sysLang.startsWith("zh")) selected = localeZH
+		else if (sysLang.startsWith("pl")) selected = localePL
+		else if (sysLang.startsWith("ja")) selected = localeJA
+		else if (sysLang.startsWith("ar")) selected = localeAR
+		else if (sysLang.startsWith("th")) selected = localeTH
+		else selected = localeEN
 	} else {
 		const languages = [localeEN, localeHU, localeES, localeFR, localeRU, localeDE, localeZH, localePL, localeJA, localeAR, localeTH]
-		return (languages[langSetting - 1] || localeEN) as typeof localeEN
+		selected = languages[langSetting - 1] || localeEN
 	}
+
+	if (selected === localeEN) return localeEN
+	return deepMerge(localeEN, selected) as typeof localeEN
 }
 
 export const currentLanguage = writable<typeof localeEN>(getLanguage())
@@ -74,5 +100,3 @@ function createLanguageProxy(getter: () => any, path: string[] = []): any {
 }
 
 export const language: typeof localeEN = createLanguageProxy(() => getLanguage())
-
-

@@ -106,12 +106,12 @@
 				// Temporarily hide native child webview so the confirmation modal is clearly visible and clickable
 				await setMailViewVisible(false)
 				const confirmed = await askModal(
-					language.mail?.confirmCancelLogin || "คุณกำลังอยู่ในหน้าเข้าสู่ระบบ ต้องการยกเลิกและกลับไปยังหน้าหลักเมลหรือไม่?",
+					language.mail?.confirmCancelLogin || "You are currently on the login page. Do you want to cancel login and return to the Mail Hub?",
 					{
-						title: language.mail?.cancelLoginTitle || "ยกเลิกการเข้าสู่ระบบ",
+						title: language.mail?.cancelLoginTitle || "Cancel Login",
 						kind: "warning",
-						okLabel: language.common?.confirm || "ยืนยัน",
-						cancelLabel: language.common?.cancel || "ยกเลิก",
+						okLabel: language.common?.confirm || "Confirm",
+						cancelLabel: language.common?.cancel || "Cancel",
 					}
 				)
 				if (confirmed) {

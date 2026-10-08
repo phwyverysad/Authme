@@ -904,12 +904,12 @@
 		{#if $mailAccounts.length === 0}
 			<div class="content mail-content mx-auto grid grid-cols-1 gap-3.5 sm:gap-4 md:gap-5 rounded-2xl p-1 sm:p-2 md:p-4 w-full">
 				<div class="importMail col-span-full transparent-800 w-full max-w-2xl mx-auto rounded-2xl p-5 text-center">
-					<h2>{language.mail?.importMail || "นำเข้าบัญชีอีเมลของคุณ"}</h2>
-					<h3>{language.mail?.importMailText || "นำเข้าบัญชีอีเมลที่มีอยู่แล้วของคุณในหน้านำเข้า"}</h3>
+					<h2>{language.mail?.importMail || "Import your email accounts"}</h2>
+					<h3>{language.mail?.importMailText || "Import your existing email accounts on the Import page."}</h3>
 					<div class="mx-auto mt-6 flex flex-row items-center justify-center gap-3 sm:flex-wrap">
 						<button class="button" on:click={() => navigate("import?category=mail")}>
 							<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h14a2 2 0 0 0 2-2V7.5L14.5 2H6a2 2 0 0 0-2 2v4" /><polyline points="14 2 14 8 20 8" /><path d="M2 15h10" /><path d="m9 18 3-3-3-3" /></svg>
-							{language.mail?.importMailButton || "นำเข้าอีเมล"}
+							{language.mail?.importMailButton || "Import accounts"}
 						</button>
 					</div>
 				</div>
@@ -1020,7 +1020,7 @@
 									<path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
 								</svg>
 							</span>
-							<span class="whitespace-nowrap tracking-tight font-semibold text-[13px]">{language.codes?.pinnedCategory || "ปักหมุด"}</span>
+							<span class="whitespace-nowrap tracking-tight font-semibold text-[13px]">{language.codes?.pinnedCategory || "Pinned"}</span>
 							<span class="text-[11px] px-2 py-0.5 rounded-full font-bold min-w-[20px] text-center
 								{mailProviderFilter === 'pinned' && !mailUnreadOnly
 									? 'bg-white/20 text-white dark:bg-slate-900/15 dark:text-slate-900 font-bold'
@@ -1329,7 +1329,7 @@
 
 							<!-- Right Side: Action Stack -->
 							<div class="flex-shrink-0 flex flex-col items-end justify-between self-stretch pointer-events-auto py-0.5 min-h-[64px]">
-								<!-- Top-Right: Star Pin Button (ขวาบน) -->
+								<!-- Top-Right: Star Pin Button -->
 								<button
 									type="button"
 									class="star-btn w-6.5 h-6.5 sm:w-7 sm:h-7 rounded-xl flex items-center justify-center transition-all active:scale-90 focus:outline-none cursor-pointer {
@@ -1337,7 +1337,7 @@
 											? 'text-amber-400 bg-amber-400/15 dark:bg-amber-400/20 border border-amber-400/40 shadow-xs'
 											: 'text-slate-400 hover:text-amber-400 dark:text-slate-500 dark:hover:text-amber-300 hover:bg-slate-200/60 dark:hover:bg-slate-700/60'
 									}"
-									title={$pinnedMailIdsStore.has(acc.id) ? (language.codes?.unpin || 'ยกเลิกการปักหมุด') : (language.codes?.pinToTop || 'ปักหมุดไว้บนสุด')}
+									title={$pinnedMailIdsStore.has(acc.id) ? (language.codes?.unpin || 'Unpin from top') : (language.codes?.pinToTop || 'Pin to top')}
 									on:pointerdown|stopPropagation
 									on:click|stopPropagation={() => togglePinMailAccount(acc.id)}
 								>
@@ -1554,7 +1554,7 @@
 				{/if}
 			</div>
 			<span class="text-slate-700 dark:text-slate-200 group-hover/menuitem:text-slate-900 dark:group-hover/menuitem:text-white">
-				{activeMailMenu?.account && $pinnedMailIdsStore.has(activeMailMenu.account.id) ? (language.codes?.unpin || "ยกเลิกการปักหมุด") : (language.codes?.pinToTop || "ปักหมุดไว้บนสุด")}
+				{activeMailMenu?.account && $pinnedMailIdsStore.has(activeMailMenu.account.id) ? (language.codes?.unpin || "Unpin from top") : (language.codes?.pinToTop || "Pin to top")}
 			</span>
 		</button>
 

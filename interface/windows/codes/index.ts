@@ -150,7 +150,7 @@ export const togglePinCodeAtIndex = async (index: number) => {
 		if (uniqId && currentCodesData.uniqIds) currentCodesData.uniqIds.splice(targetIndex, 0, uniqId)
 
 		await saveUpdatedVault(currentCodesData)
-		showToast(language.codes?.pinSuccess || "ปักหมุดบัญชีไว้บนสุดแล้ว", "success")
+		showToast(language.codes?.pinSuccess || "Pinned account to top", "success")
 	} else {
 		pinnedSecrets.delete(cleanSecret)
 		savePinnedSecrets()
@@ -180,7 +180,7 @@ export const togglePinCodeAtIndex = async (index: number) => {
 		}
 
 		await saveUpdatedVault(currentCodesData)
-		showToast(language.codes?.unpinSuccess || "ยกเลิกการปักหมุดแล้ว", "info")
+		showToast(language.codes?.unpinSuccess || "Unpinned account", "info")
 	}
 
 	generateCodeElements(currentCodesData)
@@ -323,7 +323,7 @@ export const generateCodeElements = (codes: LibImportFile) => {
 	if (pinnedCount > 0) {
 		catList.push({
 			id: "pinned",
-			name: language.codes?.pinnedCategory || "ปักหมุด",
+			name: language.codes?.pinnedCategory || "Pinned",
 			count: pinnedCount,
 			iconSvg: `<svg viewBox="0 0 24 24" fill="currentColor" class="w-3.5 h-3.5 text-amber-400"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>`,
 			bg: "background: rgba(245, 158, 11, 0.15);",
@@ -1016,7 +1016,7 @@ export const generateCodeElements = (codes: LibImportFile) => {
 
 				<!-- Right Side: Action Stack -->
 				<div class="flex-shrink-0 flex flex-col items-end justify-between self-stretch pointer-events-auto py-0.5 min-h-[64px]">
-					<!-- Top-Right: Star Pin Button (ขวาบน) -->
+					<!-- Top-Right: Star Pin Button -->
 					<button
 						type="button"
 						id="starBtn${i}"
@@ -1025,7 +1025,7 @@ export const generateCodeElements = (codes: LibImportFile) => {
 								? 'text-amber-400 bg-amber-400/15 dark:bg-amber-400/20 border border-amber-400/40 shadow-xs'
 								: 'text-slate-400 hover:text-amber-400 dark:text-slate-500 dark:hover:text-amber-300 hover:bg-slate-200/60 dark:hover:bg-slate-700/60'
 						}"
-						title="${isPinned ? (language.codes?.unpin || 'ยกเลิกการปักหมุด') : (language.codes?.pinToTop || 'ปักหมุดไว้บนสุด')}"
+						title="${isPinned ? (language.codes?.unpin || 'Unpin from top') : (language.codes?.pinToTop || 'Pin to top')}"
 					>
 						${
 							isPinned

@@ -95,7 +95,7 @@
 
 		const msg = toast.message || ""
 
-		// Match: "Copied: Discord (123 456)" or "คัดลอก: Discord (123 456)"
+		// Match: "Copied: Discord (123 456)"
 		const copyWithCode = msg.match(/^([^:]+):\s*(.*?)\s*\(([0-9\s]{6,9})\)$/)
 		if (copyWithCode) {
 			return {
@@ -106,7 +106,7 @@
 			}
 		}
 
-		// Match: "2FA code copied successfully: 123 456" or "คัดลอกรหัส 2FA เรียบร้อยแล้ว: 123 456"
+		// Match: "2FA code copied successfully: 123 456"
 		const simpleCode = msg.match(/^([^:]+):\s*([0-9]{3}\s*[0-9]{3,4})$/)
 		if (simpleCode) {
 			return {
@@ -117,7 +117,17 @@
 		}
 
 		// Match: "Email copied: user@gmail.com" or "Copied: Secret key"
-		const simpleCopy = msg.match(/^(Copied|คัดลอก|Email copied|คัดลอกอีเมล|Password copied):\s*(.+)$/i)
+		const copyKeywords = [
+			language.common?.copied,
+			language.codes?.copyAccountSuccess,
+			language.codes?.copySecret,
+			language.mail?.toastCopied2FA,
+			"Copied",
+			"Email copied",
+			"Password copied",
+		].filter(Boolean) as string[]
+		const escapedKeywords = copyKeywords.map((k) => k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")
+		const simpleCopy = escapedKeywords ? msg.match(new RegExp(`^(${escapedKeywords}):\\s*(.+)$`, "i")) : null
 		if (simpleCopy) {
 			return {
 				isStructured: true,
@@ -1732,9 +1742,9 @@
 			</div>
 
 			<!-- Title & Description -->
-			<h3 class="text-lg font-bold text-slate-900 dark:text-white tracking-tight mb-1.5">{language.settings?.resetApp || "รีเซ็ตแอป"}</h3>
+			<h3 class="text-lg font-bold text-slate-900 dark:text-white tracking-tight mb-1.5">{language.settings?.resetApp || "Reset app"}</h3>
 			<p class="text-xs sm:text-[13px] text-slate-500 dark:text-slate-400 leading-relaxed mb-5">
-				{language.dialogs?.resetWarningText || "การรีเซ็ตจะล้างรหัส 2FA และข้อมูลทั้งหมดอย่างถาวร ไม่สามารถย้อนกลับได้"}
+				{language.dialogs?.resetWarningText || "Resetting will erase all 2FA codes, master password, and all settings back to default. All data will be permanently deleted."}
 			</p>
 
 			<form on:submit|preventDefault={handleResetApp} class="space-y-4">
@@ -1743,7 +1753,7 @@
 						id="reset-confirm"
 						type="text"
 						bind:value={resetConfirmText}
-						placeholder={language.dialogs?.typeResetToConfirm || "พิมพ์ RESET เพื่อยืนยัน"}
+						placeholder={language.dialogs?.typeResetToConfirm || "Type RESET to confirm"}
 						autocomplete="off"
 						spellcheck="false"
 						class="w-full px-4 py-2.5 rounded-xl border font-mono font-bold text-sm tracking-widest text-center uppercase transition-all bg-slate-50 dark:bg-slate-900/90 border-slate-200 dark:border-slate-700/80 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 placeholder:normal-case placeholder:font-sans placeholder:tracking-normal focus:outline-none focus:border-rose-500/70 focus:ring-2 focus:ring-rose-500/20"
@@ -1757,7 +1767,7 @@
 						on:click={() => activeResetModal.set(false)}
 						class="w-full py-2.5 rounded-xl font-medium text-sm text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/80 border border-slate-200 dark:border-slate-700/70 transition-all active:scale-95 cursor-pointer"
 					>
-						{language.common?.cancel || "ยกเลิก"}
+						{language.common?.cancel || "Cancel"}
 					</button>
 					<button
 						type="submit"
@@ -1769,9 +1779,9 @@
 					>
 						{#if isResetting}
 							<svg class="animate-spin w-4 h-4 text-white" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
-							<span>{language.dialogs?.resetting || "กำลังรีเซ็ต..."}</span>
+							<span>{language.dialogs?.resetting || "Resetting..."}</span>
 						{:else}
-							<span>{language.dialogs?.confirmReset || "ยืนยันรีเซ็ต"}</span>
+							<span>{language.dialogs?.confirmReset || "Confirm Reset All"}</span>
 						{/if}
 					</button>
 				</div>

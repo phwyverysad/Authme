@@ -271,7 +271,7 @@ export async function togglePinMailAccount(id: string): Promise<void> {
 		newAccounts.splice(targetIndex, 0, acc)
 		mailAccounts.set(newAccounts)
 		await reorderMailAccounts(newAccounts.map((a) => a.id))
-		showToast(language.codes?.pinSuccess || "ปักหมุดบัญชีไว้บนสุดแล้ว", "success")
+		showToast(language.codes?.pinSuccess || "Pinned account to top", "success")
 	} else {
 		pinnedMailIds.delete(id)
 		savePinnedMailIds()
@@ -290,7 +290,7 @@ export async function togglePinMailAccount(id: string): Promise<void> {
 		}
 		mailAccounts.set(newAccounts)
 		await reorderMailAccounts(newAccounts.map((a) => a.id))
-		showToast(language.codes?.unpinSuccess || "ยกเลิกการปักหมุดแล้ว", "info")
+		showToast(language.codes?.unpinSuccess || "Unpinned account", "info")
 	}
 }
 
