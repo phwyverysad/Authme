@@ -2,7 +2,7 @@
 	<!-- Page Title & Subtitle -->
 	<div class="px-2 sm:px-6 md:px-10">
 		<h1>{language.export?.exportCodes || "Export codes"}</h1>
-		<p class="mt-2 text-base md:text-lg text-slate-400">
+		<p class="mt-2 text-base md:text-lg text-slate-500 dark:text-slate-400">
 			{activeTab === "2fa"
 				? (language.export?.exportSubtitle || "Select accounts and choose your preferred export format.")
 				: (language.export?.mailExportSubtitle || "Select email accounts to export as backup or spreadsheet.")}
@@ -15,14 +15,14 @@
 			type="button"
 			class="px-5 py-2.5 rounded-xl text-sm md:text-base font-semibold transition-all cursor-pointer flex items-center gap-2
 				{activeTab === '2fa'
-					? 'bg-white text-black shadow-md'
-					: 'transparent-800 text-slate-300 hover:text-white hover:bg-white/10'}"
+					? 'bg-slate-900 text-white dark:bg-white dark:text-black shadow-md'
+					: 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/70 dark:hover:bg-white/10 bg-slate-100 dark:transparent-800 border border-slate-200 dark:border-transparent'}"
 			on:click={() => setTab("2fa")}
 		>
 			<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
 			<span>{language.export?.tab2fa || "2FA Codes"}</span>
 			{#if $exportAccounts.length > 0}
-				<span class="px-2 py-0.5 text-xs rounded-md font-bold {activeTab === '2fa' ? 'bg-black/15 text-black' : 'bg-white/10 text-slate-200'}">
+				<span class="px-2 py-0.5 text-xs rounded-md font-bold {activeTab === '2fa' ? 'bg-white/20 text-white dark:bg-black/15 dark:text-black' : 'bg-slate-200 dark:bg-white/10 text-slate-700 dark:text-slate-200'}">
 					{$exportAccounts.length}
 				</span>
 			{/if}
@@ -32,14 +32,14 @@
 			type="button"
 			class="px-5 py-2.5 rounded-xl text-sm md:text-base font-semibold transition-all cursor-pointer flex items-center gap-2
 				{activeTab === 'mail'
-					? 'bg-white text-black shadow-md'
-					: 'transparent-800 text-slate-300 hover:text-white hover:bg-white/10'}"
+					? 'bg-slate-900 text-white dark:bg-white dark:text-black shadow-md'
+					: 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/70 dark:hover:bg-white/10 bg-slate-100 dark:transparent-800 border border-slate-200 dark:border-transparent'}"
 			on:click={() => setTab("mail")}
 		>
 			<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
 			<span>{language.export?.tabMail || "Mail Accounts"}</span>
 			{#if $exportMailAccounts.length > 0}
-				<span class="px-2 py-0.5 text-xs rounded-md font-bold {activeTab === 'mail' ? 'bg-black/15 text-black' : 'bg-white/10 text-slate-200'}">
+				<span class="px-2 py-0.5 text-xs rounded-md font-bold {activeTab === 'mail' ? 'bg-white/20 text-white dark:bg-black/15 dark:text-black' : 'bg-slate-200 dark:bg-white/10 text-slate-700 dark:text-slate-200'}">
 					{$exportMailAccounts.length}
 				</span>
 			{/if}
@@ -49,7 +49,7 @@
 	<!-- =================== TAB 1: 2FA CODES =================== -->
 	{#if activeTab === "2fa"}
 		{#if $isExportLoading}
-			<div class="flex flex-col items-center justify-center py-28 text-slate-400">
+			<div class="flex flex-col items-center justify-center py-28 text-slate-500 dark:text-slate-400">
 				<div class="w-10 h-10 rounded-full border-3 border-slate-400 border-t-transparent animate-spin mb-4" />
 				<p class="text-base font-medium">{language.common?.processing || "Loading vault accounts..."}</p>
 			</div>
@@ -62,20 +62,20 @@
 			</div>
 		{:else if $exportAccounts.length === 0}
 			<div class="mx-6 md:mx-10 my-10 rounded-2xl p-12 text-center transparent-800">
-				<p class="text-lg text-slate-400">
+				<p class="text-lg text-slate-500 dark:text-slate-400">
 					{language.export?.noAccountsFound || "No 2FA accounts found in vault."}
 				</p>
 			</div>
 		{:else}
 			<div class="mx-auto flex flex-col items-center justify-center gap-6 rounded-2xl p-6 md:p-10">
 				<!-- Step 1 Card: Account Selector -->
-				<div class="transparent-800 flex w-full flex-col items-start rounded-2xl p-6 md:p-8 text-left border border-white/10">
-					<div class="flex flex-col sm:flex-row sm:items-center justify-between w-full gap-4 pb-4 border-b border-white/10">
+				<div class="transparent-800 flex w-full flex-col items-start rounded-2xl p-6 md:p-8 text-left border border-slate-200/80 dark:border-white/10">
+					<div class="flex flex-col sm:flex-row sm:items-center justify-between w-full gap-4 pb-4 border-b border-slate-200/80 dark:border-white/10">
 						<div>
 							<h2>{language.export?.selectAccounts || "Select Accounts"}</h2>
 							<h3 class="flex items-center gap-2 mt-1">
 								<span>{language.export?.accountsSelected || "Accounts selected"}:</span>
-								<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-white/10 text-white border border-white/15">
+								<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 dark:bg-white/10 text-slate-800 dark:text-white border border-slate-300/80 dark:border-white/15">
 									{selectedCount} / {$exportAccounts.length}
 								</span>
 							</h3>
@@ -93,18 +93,18 @@
 
 					<!-- Search Filter -->
 					<div class="relative w-full mt-5">
-						<svg class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+						<svg class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 dark:text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
 						<input
 							type="text"
 							bind:value={search2fa}
 							placeholder={language.export?.searchAccountsPlaceholder || "Filter accounts..."}
-							class="w-full pl-12 pr-12 py-3.5 rounded-2xl text-base shadow-sm border border-white/15 bg-white/[0.04] focus:border-white/30 focus:bg-white/[0.07] text-white placeholder:text-slate-400 transition-all outline-none"
+							class="w-full pl-12 pr-12 py-3.5 rounded-2xl text-base shadow-sm border border-slate-200 dark:border-white/15 bg-white dark:bg-white/[0.04] focus:border-slate-400 dark:focus:border-white/30 focus:bg-white dark:focus:bg-white/[0.07] text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none"
 						/>
 						{#if search2fa}
 							<button
 								type="button"
 								on:click={() => (search2fa = "")}
-								class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-1 rounded-full hover:bg-white/10 transition-colors"
+								class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 dark:hover:text-white p-1 rounded-full hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
 							>
 								<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
 							</button>
@@ -121,16 +121,16 @@
 								tabindex="0"
 								class="group relative flex items-center gap-3.5 p-4 rounded-2xl border transition-all duration-150 cursor-pointer
 									{acc.selected
-										? 'bg-white/10 border-white/30 text-white shadow-lg shadow-black/20'
-										: 'bg-white/[0.03] border-white/10 hover:border-white/20 hover:bg-white/[0.06] text-slate-300'}"
+										? 'bg-blue-50/80 dark:bg-white/10 border-blue-500/50 dark:border-white/30 text-slate-900 dark:text-white shadow-md shadow-blue-500/5 dark:shadow-black/20'
+										: 'bg-white dark:bg-white/[0.03] border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20 hover:bg-slate-50/80 dark:hover:bg-white/[0.06] text-slate-700 dark:text-slate-300 shadow-xs'}"
 								on:click={() => toggleAccount2fa(acc.id)}
 							>
 								<!-- Custom Checkbox Indicator -->
 								<div
 									class="w-5 h-5 rounded-lg flex items-center justify-center flex-shrink-0 transition-all duration-150
 										{acc.selected
-											? 'bg-white text-slate-900 shadow-sm'
-											: 'border-2 border-white/20 group-hover:border-white/40'}"
+											? 'bg-blue-600 text-white dark:bg-white dark:text-slate-900 shadow-sm'
+											: 'border-2 border-slate-300 dark:border-white/20 group-hover:border-slate-400 dark:group-hover:border-white/40'}"
 								>
 									{#if acc.selected}
 										<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
@@ -149,10 +149,10 @@
 
 								<!-- Account Info -->
 								<div class="min-w-0 flex-1 text-left">
-									<p class="text-[15px] font-semibold text-white truncate leading-tight group-hover:text-white">
+									<p class="text-[15px] font-semibold text-slate-900 dark:text-white truncate leading-tight group-hover:text-slate-900 dark:group-hover:text-white">
 										{acc.issuer}
 									</p>
-									<p class="text-xs text-slate-400 truncate mt-1 leading-tight group-hover:text-slate-300">
+									<p class="text-xs text-slate-500 dark:text-slate-400 truncate mt-1 leading-tight group-hover:text-slate-700 dark:group-hover:text-slate-300">
 										{acc.name || acc.issuer}
 									</p>
 								</div>
@@ -161,16 +161,16 @@
 					</div>
 
 					{#if filteredAccounts.length === 0}
-						<p class="text-center w-full py-8 text-sm text-slate-400">
+						<p class="text-center w-full py-8 text-sm text-slate-500 dark:text-slate-400">
 							{language.common?.noResultsFound || "No accounts match search filter"}
 						</p>
 					{/if}
 				</div>
 
 				<!-- Step 2: Hero - All-In-One Transfer QR Code (Combined 1-3 QRs) -->
-				<div class="transparent-800 flex w-full flex-col md:flex-row md:items-center justify-between rounded-xl p-6 md:p-8 text-left border-2 border-emerald-500/40 bg-emerald-500/10">
+				<div class="transparent-800 flex w-full flex-col md:flex-row md:items-center justify-between rounded-xl p-6 md:p-8 text-left border-2 border-emerald-500/50 bg-emerald-50/60 dark:bg-emerald-500/10">
 					<div class="max-w-2xl pr-4">
-						<div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/25 text-emerald-300 mb-2">
+						<div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-500/25 dark:text-emerald-300 mb-2 border border-emerald-300 dark:border-transparent">
 							<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
 							<span>{language.export?.recommendedBadge || "RECOMMENDED • ALL AUTHENTICATORS"}</span>
 						</div>
@@ -181,7 +181,7 @@
 					<div class="mt-6 md:mt-0 flex-shrink-0">
 						<button
 							type="button"
-							class="button !bg-emerald-500 !text-white hover:!bg-emerald-400 !border-emerald-500 cursor-pointer"
+							class="button !bg-emerald-600 hover:!bg-emerald-500 !text-white !border-emerald-600 cursor-pointer shadow-md"
 							disabled={selectedCount === 0}
 							on:click={openMigrationModal}
 						>
@@ -321,7 +321,7 @@
 	<!-- =================== TAB 2: MAIL ACCOUNTS =================== -->
 	{:else if activeTab === "mail"}
 		{#if $isMailExportLoading}
-			<div class="flex flex-col items-center justify-center py-28 text-slate-400">
+			<div class="flex flex-col items-center justify-center py-28 text-slate-500 dark:text-slate-400">
 				<div class="w-10 h-10 rounded-full border-3 border-slate-400 border-t-transparent animate-spin mb-4" />
 				<p class="text-base font-medium">{language.common?.processing || "Loading mail accounts..."}</p>
 			</div>
@@ -334,20 +334,20 @@
 			</div>
 		{:else if $exportMailAccounts.length === 0}
 			<div class="mx-6 md:mx-10 my-10 rounded-2xl p-12 text-center transparent-800">
-				<p class="text-lg text-slate-400">
+				<p class="text-lg text-slate-500 dark:text-slate-400">
 					{language.export?.noMailAccountsFound || "No connected email accounts found."}
 				</p>
 			</div>
 		{:else}
 			<div class="mx-auto flex flex-col items-center justify-center gap-6 rounded-2xl p-6 md:p-10">
 				<!-- Step 1 Card: Mail Accounts Selector -->
-				<div class="transparent-800 flex w-full flex-col items-start rounded-2xl p-6 md:p-8 text-left border border-white/10">
-					<div class="flex flex-col sm:flex-row sm:items-center justify-between w-full gap-4 pb-4 border-b border-white/10">
+				<div class="transparent-800 flex w-full flex-col items-start rounded-2xl p-6 md:p-8 text-left border border-slate-200/80 dark:border-white/10">
+					<div class="flex flex-col sm:flex-row sm:items-center justify-between w-full gap-4 pb-4 border-b border-slate-200/80 dark:border-white/10">
 						<div>
 							<h2>{language.export?.selectAccounts || "Select Mail Accounts"}</h2>
 							<h3 class="flex items-center gap-2 mt-1">
 								<span>{language.export?.accountsSelected || "Accounts selected"}:</span>
-								<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-white/10 text-white border border-white/15">
+								<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 dark:bg-white/10 text-slate-800 dark:text-white border border-slate-300/80 dark:border-white/15">
 									{selectedMailCount} / {$exportMailAccounts.length}
 								</span>
 							</h3>
@@ -365,18 +365,18 @@
 
 					<!-- Search Filter -->
 					<div class="relative w-full mt-5">
-						<svg class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+						<svg class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 dark:text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
 						<input
 							type="text"
 							bind:value={searchMail}
 							placeholder={language.export?.searchAccountsPlaceholder || "Filter email accounts..."}
-							class="w-full pl-12 pr-12 py-3.5 rounded-2xl text-base shadow-sm border border-white/15 bg-white/[0.04] focus:border-white/30 focus:bg-white/[0.07] text-white placeholder:text-slate-400 transition-all outline-none"
+							class="w-full pl-12 pr-12 py-3.5 rounded-2xl text-base shadow-sm border border-slate-200 dark:border-white/15 bg-white dark:bg-white/[0.04] focus:border-slate-400 dark:focus:border-white/30 focus:bg-white dark:focus:bg-white/[0.07] text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none"
 						/>
 						{#if searchMail}
 							<button
 								type="button"
 								on:click={() => (searchMail = "")}
-								class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-1 rounded-full hover:bg-white/10 transition-colors"
+								class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 dark:hover:text-white p-1 rounded-full hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
 							>
 								<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
 							</button>
@@ -393,16 +393,16 @@
 								tabindex="0"
 								class="group relative flex items-center gap-3.5 p-4 rounded-2xl border transition-all duration-150 cursor-pointer
 									{acc.selected
-										? 'bg-white/10 border-white/30 text-white shadow-lg shadow-black/20'
-										: 'bg-white/[0.03] border-white/10 hover:border-white/20 hover:bg-white/[0.06] text-slate-300'}"
+										? 'bg-blue-50/80 dark:bg-white/10 border-blue-500/50 dark:border-white/30 text-slate-900 dark:text-white shadow-md shadow-blue-500/5 dark:shadow-black/20'
+										: 'bg-white dark:bg-white/[0.03] border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20 hover:bg-slate-50/80 dark:hover:bg-white/[0.06] text-slate-700 dark:text-slate-300 shadow-xs'}"
 								on:click={() => toggleAccountMail(acc.id)}
 							>
 								<!-- Custom Checkbox Indicator -->
 								<div
 									class="w-5 h-5 rounded-lg flex items-center justify-center flex-shrink-0 transition-all duration-150
 										{acc.selected
-											? 'bg-white text-slate-900 shadow-sm'
-											: 'border-2 border-white/20 group-hover:border-white/40'}"
+											? 'bg-blue-600 text-white dark:bg-white dark:text-slate-900 shadow-sm'
+											: 'border-2 border-slate-300 dark:border-white/20 group-hover:border-slate-400 dark:group-hover:border-white/40'}"
 								>
 									{#if acc.selected}
 										<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
@@ -422,16 +422,16 @@
 								<!-- Account Info -->
 								<div class="min-w-0 flex-1 text-left">
 									<div class="flex items-center gap-2">
-										<p class="text-[15px] font-semibold text-white truncate leading-tight group-hover:text-white">
+										<p class="text-[15px] font-semibold text-slate-900 dark:text-white truncate leading-tight group-hover:text-slate-900 dark:group-hover:text-white">
 											{acc.name || acc.email}
 										</p>
 										{#if acc.label}
-											<span class="text-[10px] px-2 py-0.5 rounded-md bg-white/10 text-slate-300 font-semibold flex-shrink-0">
+											<span class="text-[10px] px-2 py-0.5 rounded-md bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-300 font-semibold flex-shrink-0 border border-slate-200 dark:border-transparent">
 												{acc.label}
 											</span>
 										{/if}
 									</div>
-									<p class="text-xs text-slate-400 truncate mt-1 leading-tight group-hover:text-slate-300">
+									<p class="text-xs text-slate-500 dark:text-slate-400 truncate mt-1 leading-tight group-hover:text-slate-700 dark:group-hover:text-slate-300">
 										{acc.email}
 									</p>
 								</div>
@@ -440,7 +440,7 @@
 					</div>
 
 					{#if filteredMailAccounts.length === 0}
-						<p class="text-center w-full py-8 text-sm text-slate-400">
+						<p class="text-center w-full py-8 text-sm text-slate-500 dark:text-slate-400">
 							{language.common?.noResultsFound || "No accounts match search filter"}
 						</p>
 					{/if}
@@ -524,19 +524,19 @@
 	>
 		<div
 			transition:scale={{ start: 0.94, duration: 180 }}
-			class="relative w-full max-w-4xl max-h-[92vh] overflow-y-auto custom-scrollbar rounded-3xl p-6 sm:p-8 shadow-2xl border text-center transparent-900 border-white/20 text-white backdrop-blur-2xl"
+			class="relative w-full max-w-4xl max-h-[92vh] overflow-y-auto custom-scrollbar rounded-3xl p-6 sm:p-8 shadow-2xl border text-center bg-white dark:bg-slate-900 border-slate-200 dark:border-white/20 text-slate-900 dark:text-white backdrop-blur-2xl"
 		>
 			<!-- Top Bar / Header -->
-			<div class="flex items-start justify-between mb-5 pb-4 border-b border-white/10">
+			<div class="flex items-start justify-between mb-5 pb-4 border-b border-slate-200 dark:border-white/10">
 				<div class="text-left pr-4">
-					<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 mb-2">
-						<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+					<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 dark:bg-emerald-500/15 text-emerald-800 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-500/30 mb-2">
+						<span class="w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse"></span>
 						<span>{language.export?.googleMigrationProtocol || "Google Authenticator Migration Protocol"}</span>
 					</div>
-					<h2 class="text-2xl sm:text-3xl font-bold tracking-tight text-white leading-tight">
+					<h2 class="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white leading-tight">
 						{language.export?.migrationModalTitle || "All-In-One Transfer QR Code"}
 					</h2>
-					<p class="text-xs sm:text-sm text-slate-300 mt-1 leading-relaxed">
+					<p class="text-xs sm:text-sm text-slate-600 dark:text-slate-300 mt-1 leading-relaxed">
 						{language.export?.migrationModalSubtitle?.replace("{count}", selectedCount.toString()) ||
 							`Scan with Google Authenticator, 2FAS, Aegis, or Ente to import all ${selectedCount} selected accounts.`}
 					</p>
@@ -545,7 +545,7 @@
 				<button
 					type="button"
 					on:click={() => (showMigrationModal = false)}
-					class="text-slate-400 hover:text-white p-2 rounded-full hover:bg-white/10 transition-colors cursor-pointer flex-shrink-0"
+					class="text-slate-400 hover:text-slate-700 dark:hover:text-white p-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/10 transition-colors cursor-pointer flex-shrink-0"
 					aria-label={language.common?.close || "Close"}
 					title={language.common?.close || "Close"}
 				>
@@ -556,9 +556,9 @@
 			<!-- Main Content: Symmetrical 2-Column Split on Desktop -->
 			<div class="flex flex-col md:flex-row items-center md:items-stretch gap-6 md:gap-8">
 				<!-- Left Column: Large QR Code + Batch Badge + Navigation (Centered, no awkward stretching) -->
-				<div class="w-full md:w-[44%] flex flex-col items-center justify-center gap-4 p-5 sm:p-6 rounded-2xl transparent-800 border border-white/10">
+				<div class="w-full md:w-[44%] flex flex-col items-center justify-center gap-4 p-5 sm:p-6 rounded-2xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/10">
 					<!-- QR Code Canvas -->
-					<div class="p-5 sm:p-6 rounded-2xl bg-white shadow-2xl inline-flex flex-col items-center justify-center transition-transform">
+					<div class="p-5 sm:p-6 rounded-2xl bg-white shadow-xl border border-slate-200/80 dark:border-transparent inline-flex flex-col items-center justify-center transition-transform">
 						<img
 							src={currentBatch.qrDataUrl}
 							alt="Transfer QR Batch {migrationBatchIndex + 1} of {migrationBatches.length}"
@@ -568,7 +568,7 @@
 
 					<!-- Batch Indicator Badge -->
 					<div class="flex items-center justify-center">
-						<span class="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold bg-white/10 text-emerald-400 border border-emerald-500/30 shadow-xs">
+						<span class="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold bg-emerald-50 dark:bg-white/10 text-emerald-800 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-500/30 shadow-xs">
 							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="w-3.5 h-3.5 flex-shrink-0"><polyline points="20 6 9 17 4 12"/></svg>
 							<span>
 								{language.export?.batchCounter
@@ -589,8 +589,8 @@
 								on:click={() => (migrationBatchIndex = Math.max(0, migrationBatchIndex - 1))}
 								class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer
 									{migrationBatchIndex === 0
-										? 'text-slate-600 bg-white/5 cursor-not-allowed'
-										: 'text-white bg-white/10 hover:bg-white/20 active:scale-95'}"
+										? 'text-slate-400 dark:text-slate-600 bg-slate-200/50 dark:bg-white/5 cursor-not-allowed'
+										: 'text-slate-800 dark:text-white bg-slate-200/80 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 active:scale-95'}"
 							>
 								<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 flex-shrink-0"><path d="m15 18-6-6 6-6"/></svg>
 								<span>{language.common?.previous || "Previous"}</span>
@@ -598,7 +598,7 @@
 
 							<div class="flex items-center gap-1.5">
 								{#each migrationBatches as _, idx}
-									<span class="h-2 rounded-full transition-all duration-300 {idx === migrationBatchIndex ? 'w-6 bg-emerald-400' : 'w-2 bg-white/20'}" />
+									<span class="h-2 rounded-full transition-all duration-300 {idx === migrationBatchIndex ? 'w-6 bg-emerald-500 dark:bg-emerald-400' : 'w-2 bg-slate-300 dark:bg-white/20'}" />
 								{/each}
 							</div>
 
@@ -608,8 +608,8 @@
 								on:click={() => (migrationBatchIndex = Math.min(migrationBatches.length - 1, migrationBatchIndex + 1))}
 								class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer
 									{migrationBatchIndex === migrationBatches.length - 1
-										? 'text-slate-600 bg-white/5 cursor-not-allowed'
-										: 'text-white bg-white/10 hover:bg-white/20 active:scale-95'}"
+										? 'text-slate-400 dark:text-slate-600 bg-slate-200/50 dark:bg-white/5 cursor-not-allowed'
+										: 'text-slate-800 dark:text-white bg-slate-200/80 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 active:scale-95'}"
 							>
 								<span>{language.common?.next || "Next"}</span>
 								<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 flex-shrink-0"><path d="m9 18 6-6-6-6"/></svg>
@@ -621,11 +621,11 @@
 				<!-- Right Column: Included Accounts List + Action Buttons -->
 				<div class="w-full md:w-[56%] flex flex-col justify-between text-left">
 					<div class="flex flex-col flex-1">
-						<div class="flex items-center justify-between mb-2 pb-2 border-b border-white/10">
-							<span class="text-xs font-bold text-slate-300 uppercase tracking-wider">
+						<div class="flex items-center justify-between mb-2 pb-2 border-b border-slate-200 dark:border-white/10">
+							<span class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
 								{language.export?.accountsInThisQr || "Accounts in this QR"} ({currentBatch.accounts.length})
 							</span>
-							<span class="text-xs text-slate-400 font-medium">
+							<span class="text-xs text-slate-500 dark:text-slate-400 font-medium">
 								{language.export?.batchIndicator || "Batch"} {migrationBatchIndex + 1} / {migrationBatches.length}
 							</span>
 						</div>
@@ -634,7 +634,7 @@
 						<div class="flex flex-col gap-2 max-h-[290px] overflow-y-auto custom-scrollbar pr-1.5">
 							{#each currentBatch.accounts as item, idx}
 								{@const icon = getServiceIcon(item.issuer, item.name)}
-								<div class="flex items-center gap-3 p-3 rounded-xl bg-white/[0.04] border border-white/10 hover:border-white/20 transition-all">
+								<div class="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-white/[0.04] border border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20 transition-all">
 									<span
 										class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden shadow-sm border border-black/10 dark:border-white/15 [&>svg]:w-5 [&>svg]:h-5 [&>img]:w-5 [&>img]:h-5 [&>span]:text-xs [&>span]:font-bold [&>span]:text-white"
 										style="{icon.bg || 'background: #64748b;'}"
@@ -642,14 +642,14 @@
 										{@html icon.svg}
 									</span>
 									<div class="min-w-0 flex-1">
-										<p class="text-sm font-semibold text-white truncate leading-tight">
+										<p class="text-sm font-semibold text-slate-900 dark:text-white truncate leading-tight">
 											{item.issuer}
 										</p>
-										<p class="text-xs text-slate-400 truncate mt-0.5 leading-tight">
+										<p class="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5 leading-tight">
 											{item.name || item.issuer}
 										</p>
 									</div>
-									<span class="text-[11px] font-mono font-medium text-slate-400 px-2 py-0.5 rounded bg-white/5 border border-white/10">
+									<span class="text-[11px] font-mono font-medium text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded bg-slate-200/70 dark:bg-white/5 border border-slate-300/70 dark:border-white/10">
 										#{idx + 1}
 									</span>
 								</div>
@@ -658,11 +658,11 @@
 					</div>
 
 					<!-- Bottom Action Buttons (Sleek, side-by-side, explicit SVG dimensions) -->
-					<div class="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-white/10">
+					<div class="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-slate-200 dark:border-white/10">
 						<button
 							type="button"
 							on:click={() => downloadQrPngImage(currentBatch.qrDataUrl, `authme_migration_qr_${migrationBatchIndex + 1}_of_${migrationBatches.length}`)}
-							class="h-11 px-3 rounded-xl font-bold text-xs sm:text-sm bg-white text-slate-900 hover:bg-slate-200 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-lg cursor-pointer"
+							class="h-11 px-3 rounded-xl font-bold text-xs sm:text-sm bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-lg cursor-pointer"
 						>
 							<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 flex-shrink-0"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
 							<span class="truncate">{language.export?.downloadQrPng || "Download PNG"}</span>
@@ -671,7 +671,7 @@
 						<button
 							type="button"
 							on:click={() => copyTextToClipboard(currentBatch.uri, language.export?.copied || "Copied Migration URI")}
-							class="h-11 px-3 rounded-xl font-semibold text-xs sm:text-sm bg-white/10 hover:bg-white/15 text-white border border-white/15 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
+							class="h-11 px-3 rounded-xl font-semibold text-xs sm:text-sm bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 dark:bg-white/10 dark:hover:bg-white/15 dark:text-white dark:border-white/15 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
 						>
 							<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 flex-shrink-0"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
 							<span class="truncate">{language.export?.copyUri || "Copy URI"}</span>
@@ -700,10 +700,10 @@
 	>
 		<div
 			transition:scale={{ start: 0.94, duration: 180 }}
-			class="relative w-full max-w-3xl max-h-[92vh] overflow-y-auto custom-scrollbar rounded-3xl p-6 sm:p-8 shadow-2xl border text-center transparent-900 border-white/20 text-white backdrop-blur-2xl"
+			class="relative w-full max-w-3xl max-h-[92vh] overflow-y-auto custom-scrollbar rounded-3xl p-6 sm:p-8 shadow-2xl border text-center bg-white dark:bg-slate-900 border-slate-200 dark:border-white/20 text-slate-900 dark:text-white backdrop-blur-2xl"
 		>
 			<!-- Top Bar / Header -->
-			<div class="flex items-start justify-between mb-5 pb-4 border-b border-white/10">
+			<div class="flex items-start justify-between mb-5 pb-4 border-b border-slate-200 dark:border-white/10">
 				<div class="flex items-center gap-3.5 text-left min-w-0 pr-4">
 					<span
 						class="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden shadow-sm border border-black/10 dark:border-white/15 [&>svg]:w-7 [&>svg]:h-7 [&>img]:w-7 [&>img]:h-7 [&>span]:text-lg [&>span]:font-bold [&>span]:text-white"
@@ -712,10 +712,10 @@
 						{@html icon.svg}
 					</span>
 					<div class="min-w-0">
-						<h3 class="text-xl sm:text-2xl font-bold text-white truncate leading-tight">
+						<h3 class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white truncate leading-tight">
 							{activeQrAccount.issuer}
 						</h3>
-						<p class="text-xs sm:text-sm text-slate-300 truncate mt-0.5">
+						<p class="text-xs sm:text-sm text-slate-500 dark:text-slate-300 truncate mt-0.5">
 							{activeQrAccount.name || activeQrAccount.issuer}
 						</p>
 					</div>
@@ -724,7 +724,7 @@
 				<button
 					type="button"
 					on:click={() => (showQrModal = false)}
-					class="text-slate-400 hover:text-white p-2 rounded-full hover:bg-white/10 transition-colors cursor-pointer flex-shrink-0"
+					class="text-slate-400 hover:text-slate-700 dark:hover:text-white p-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/10 transition-colors cursor-pointer flex-shrink-0"
 					aria-label={language.common?.close || "Close"}
 					title={language.common?.close || "Close"}
 				>
@@ -735,9 +735,9 @@
 			<!-- Main 2-Column Split: Left (QR & Nav) | Right (Secret & Actions) -->
 			<div class="flex flex-col md:flex-row items-center md:items-stretch gap-6 md:gap-8">
 				<!-- Left Column: QR Code + Carousel Navigation (Centered, no stretching) -->
-				<div class="w-full md:w-[46%] flex flex-col items-center justify-center gap-4 p-5 sm:p-6 rounded-2xl transparent-800 border border-white/10">
+				<div class="w-full md:w-[46%] flex flex-col items-center justify-center gap-4 p-5 sm:p-6 rounded-2xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/10">
 					<!-- QR Code Canvas -->
-					<div class="p-5 sm:p-6 rounded-2xl bg-white shadow-2xl inline-flex items-center justify-center">
+					<div class="p-5 sm:p-6 rounded-2xl bg-white shadow-xl border border-slate-200/80 dark:border-transparent inline-flex items-center justify-center">
 						<img
 							src={currentQrUrl}
 							alt="{activeQrAccount.issuer} QR Code"
@@ -751,20 +751,20 @@
 							<button
 								type="button"
 								on:click={prevQrAccount}
-								class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-white bg-white/10 hover:bg-white/20 active:scale-95 transition-all cursor-pointer"
+								class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-800 dark:text-white bg-slate-200/80 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 active:scale-95 transition-all cursor-pointer"
 							>
 								<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 flex-shrink-0"><path d="m15 18-6-6 6-6"/></svg>
 								<span>{language.common?.previous || "Previous"}</span>
 							</button>
 
-							<span class="text-xs sm:text-sm font-semibold text-slate-300">
+							<span class="text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-300">
 								{qrAccountIndex + 1} / {selectedAccounts.length}
 							</span>
 
 							<button
 								type="button"
 								on:click={nextQrAccount}
-								class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-white bg-white/10 hover:bg-white/20 active:scale-95 transition-all cursor-pointer"
+								class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-800 dark:text-white bg-slate-200/80 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 active:scale-95 transition-all cursor-pointer"
 							>
 								<span>{language.common?.next || "Next"}</span>
 								<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 flex-shrink-0"><path d="m9 18 6-6-6-6"/></svg>
@@ -777,44 +777,44 @@
 				<div class="w-full md:w-[54%] flex flex-col justify-between text-left">
 					<div class="space-y-4">
 						<!-- Secret Key Box -->
-						<div class="rounded-2xl p-4 transparent-800 border border-white/10">
+						<div class="rounded-2xl p-4 bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/10">
 							<div class="flex items-center justify-between mb-2">
-								<span class="text-xs font-bold text-slate-400 uppercase tracking-wider">
+								<span class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
 									{language.codes?.secretKey || "Secret Key"}
 								</span>
 								<button
 									type="button"
 									on:click={() => (showPlainSecret = !showPlainSecret)}
-									class="text-xs font-semibold text-slate-300 hover:text-white cursor-pointer px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
+									class="text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white cursor-pointer px-2.5 py-1 rounded-lg bg-slate-200/70 dark:bg-white/5 hover:bg-slate-300 dark:hover:bg-white/10 transition-colors"
 								>
 									{showPlainSecret ? (language.common?.hide || "Hide") : (language.common?.show || "Show")}
 								</button>
 							</div>
-							<p class="font-mono text-sm sm:text-base font-bold tracking-wider select-all break-all text-white bg-black/20 p-3 rounded-xl border border-white/5">
+							<p class="font-mono text-sm sm:text-base font-bold tracking-wider select-all break-all text-slate-900 dark:text-white bg-slate-200/60 dark:bg-black/20 p-3 rounded-xl border border-slate-300/60 dark:border-white/5">
 								{showPlainSecret ? formatSecretGroups(activeQrAccount.secret) : "•••• •••• •••• ••••"}
 							</p>
 						</div>
 
 						<!-- Metadata Specs -->
 						<div class="flex items-center gap-2 flex-wrap">
-							<span class="text-xs px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-slate-300">
-								{language.export?.typeLabel || "Type"}: <strong class="text-white">{activeQrAccount.type || "TOTP"}</strong>
+							<span class="text-xs px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300">
+								{language.export?.typeLabel || "Type"}: <strong class="text-slate-900 dark:text-white">{activeQrAccount.type || "TOTP"}</strong>
 							</span>
-							<span class="text-xs px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-slate-300">
-								{language.export?.digitsLabel || "Digits"}: <strong class="text-white">{activeQrAccount.digits || 6}</strong>
+							<span class="text-xs px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300">
+								{language.export?.digitsLabel || "Digits"}: <strong class="text-slate-900 dark:text-white">{activeQrAccount.digits || 6}</strong>
 							</span>
-							<span class="text-xs px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-slate-300">
-								{language.export?.periodLabel || "Period"}: <strong class="text-white">{activeQrAccount.period || 30}s</strong>
+							<span class="text-xs px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300">
+								{language.export?.periodLabel || "Period"}: <strong class="text-slate-900 dark:text-white">{activeQrAccount.period || 30}s</strong>
 							</span>
 						</div>
 					</div>
 
 					<!-- Action Buttons -->
-					<div class="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-white/10">
+					<div class="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-slate-200 dark:border-white/10">
 						<button
 							type="button"
 							on:click={() => downloadSingleQrPng(activeQrAccount)}
-							class="h-11 px-2.5 rounded-xl font-bold text-xs bg-white text-slate-900 hover:bg-slate-200 active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-lg"
+							class="h-11 px-2.5 rounded-xl font-bold text-xs bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200 active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-lg"
 							title={language.export?.downloadQrPng || "Download QR PNG"}
 						>
 							<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 flex-shrink-0"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -824,7 +824,7 @@
 						<button
 							type="button"
 							on:click={() => copyTextToClipboard(currentUri, language.export?.copied || "Copied URI")}
-							class="h-11 px-2.5 rounded-xl font-semibold text-xs bg-white/10 hover:bg-white/15 text-white border border-white/15 active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1.5"
+							class="h-11 px-2.5 rounded-xl font-semibold text-xs bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 dark:bg-white/10 dark:hover:bg-white/15 dark:text-white dark:border-white/15 active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1.5"
 							title={language.export?.copyUri || "Copy URI"}
 						>
 							<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 flex-shrink-0"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
@@ -834,7 +834,7 @@
 						<button
 							type="button"
 							on:click={() => copyTextToClipboard(activeQrAccount.secret, language.export?.copied || "Copied Secret")}
-							class="h-11 px-2.5 rounded-xl font-semibold text-xs bg-white/10 hover:bg-white/15 text-white border border-white/15 active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1.5"
+							class="h-11 px-2.5 rounded-xl font-semibold text-xs bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 dark:bg-white/10 dark:hover:bg-white/15 dark:text-white dark:border-white/15 active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1.5"
 							title={language.export?.copySecret || "Copy Secret"}
 						>
 							<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 flex-shrink-0"><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>
@@ -855,10 +855,16 @@
 		background: transparent;
 	}
 	.custom-scrollbar::-webkit-scrollbar-thumb {
-		background: rgba(255, 255, 255, 0.18);
+		background: rgba(148, 163, 184, 0.4);
 		border-radius: 9999px;
 	}
 	.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+		background: rgba(148, 163, 184, 0.7);
+	}
+	:global(.dark) .custom-scrollbar::-webkit-scrollbar-thumb {
+		background: rgba(255, 255, 255, 0.18);
+	}
+	:global(.dark) .custom-scrollbar::-webkit-scrollbar-thumb:hover {
 		background: rgba(255, 255, 255, 0.35);
 	}
 </style>
