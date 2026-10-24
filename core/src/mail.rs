@@ -1624,6 +1624,7 @@ mod tests {
 
     #[test]
     fn test_save_accounts_to_disk_encrypts_passwords() {
+        let _guard = crate::encryption::tests::TEST_MUTEX.lock().unwrap();
         let temp_dir = std::env::temp_dir();
         let test_file = temp_dir.join(format!("test_mail_acc_{}.json", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
 

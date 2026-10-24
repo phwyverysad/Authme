@@ -113,7 +113,7 @@ fn main() {
 
             // Prime encryption key in background thread immediately so fast-path decryption is instantly available
             let _ = std::thread::spawn(|| {
-                let _ = encryption::set_encryption_key("authme".to_string());
+                encryption::prime_existing_key();
             });
 
             // Launch args

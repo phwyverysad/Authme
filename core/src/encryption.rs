@@ -6,6 +6,8 @@ use magic_crypt::{new_magic_crypt, MagicCryptTrait};
 use once_cell::sync::Lazy;
 use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
+use std::fs;
+use std::path::PathBuf;
 use std::sync::Mutex;
 extern crate keyring;
 
@@ -27,6 +29,63 @@ fn set_active_key(key: String) {
     *ENCRYPTION_KEY.lock().unwrap_or_else(|e| e.into_inner()) = key;
 }
 
+fn get_fallback_key_path() -> PathBuf {
+    #[cfg(target_os = "windows")]
+    {
+        if let Ok(appdata) = std::env::var("APPDATA") {
+            let p = PathBuf::from(appdata).join("com.levminer.authme");
+            let _ = fs::create_dir_all(&p);
+            return p.join(".vault_key");
+        }
+    }
+    #[cfg(target_os = "macos")]
+    {
+        if let Ok(home) = std::env::var("HOME") {
+            let p = PathBuf::from(home).join("Library/Application Support/com.levminer.authme");
+            let _ = fs::create_dir_all(&p);
+            return p.join(".vault_key");
+        }
+    }
+    #[cfg(target_os = "linux")]
+    {
+        if let Ok(home) = std::env::var("HOME") {
+            let p = PathBuf::from(home).join(".config/com.levminer.authme");
+            let _ = fs::create_dir_all(&p);
+            return p.join(".vault_key");
+        }
+    }
+    PathBuf::from(".vault_key")
+}
+
+pub fn save_fallback_key(key: &str) {
+    let trimmed = key.trim();
+    if trimmed.is_empty() || trimmed == "error" {
+        return;
+    }
+    let path = get_fallback_key_path();
+    let _ = fs::write(path, trimmed);
+}
+
+pub fn get_fallback_key() -> Option<String> {
+    let path = get_fallback_key_path();
+    if let Ok(contents) = fs::read_to_string(path) {
+        let trimmed = contents.trim().to_string();
+        if !trimmed.is_empty() && trimmed != "error" {
+            return Some(trimmed);
+        }
+    }
+    None
+}
+
+pub fn delete_fallback_key() {
+    let path = get_fallback_key_path();
+    let _ = fs::remove_file(path);
+}
+
+pub fn has_fallback_key() -> bool {
+    get_fallback_key().is_some()
+}
+
 fn get_keyring_key_with_name(service: &str, name: &str) -> Option<String> {
     let key_name = if name.trim().is_empty() { "encryptionKey" } else { name };
     if let Ok(entry) = keyring::Entry::new(service, key_name) {
@@ -40,7 +99,10 @@ fn get_keyring_key_with_name(service: &str, name: &str) -> Option<String> {
 }
 
 fn get_keyring_key(service: &str) -> Option<String> {
-    get_keyring_key_with_name(service, "encryptionKey")
+    if let Some(k) = get_keyring_key_with_name(service, "encryptionKey") {
+        return Some(k);
+    }
+    get_fallback_key()
 }
 
 fn set_keyring_key_with_name(service: &str, name: &str, key: &str) -> bool {
@@ -60,6 +122,7 @@ fn sync_keyring_key(key: &str) {
     if !key.is_empty() && key != "error" {
         let _ = set_keyring_key("authme", key);
         let _ = set_keyring_key("authme_dev", key);
+        save_fallback_key(key);
     }
 }
 
@@ -93,9 +156,13 @@ pub fn encrypt_data(data: String) -> String {
 
     // Never encrypt with "error" or uninitialized key
     if key == "error" || key.is_empty() {
-        if let Some(k) = get_keyring_key("authme").or_else(|| get_keyring_key("authme_dev")) {
+        if let Some(k) = get_keyring_key("authme")
+            .or_else(|| get_keyring_key("authme_dev"))
+            .or_else(get_fallback_key)
+        {
             key = k;
             set_active_key(key.clone());
+            sync_keyring_key(&key);
         } else {
             key = generate_random_secure_key();
             set_active_key(key.clone());
@@ -142,6 +209,13 @@ pub fn decrypt_data(data: String) -> String {
         }
     }
 
+    // Key from fallback storage
+    if let Some(k) = get_fallback_key() {
+        if !candidate_keys.contains(&k) {
+            candidate_keys.push(k);
+        }
+    }
+
     // Empty string key fallback (recovery for vaults encrypted during unkeyed state)
     if !candidate_keys.contains(&"".to_string()) {
         candidate_keys.push("".to_string());
@@ -152,6 +226,9 @@ pub fn decrypt_data(data: String) -> String {
         let mc = new_magic_crypt!(key, 256);
         if let Ok(decrypted_string) = mc.decrypt_base64_to_string(&data) {
             set_active_key(key.clone());
+            if !key.is_empty() {
+                sync_keyring_key(key);
+            }
             return decrypted_string;
         }
     }
@@ -168,7 +245,13 @@ pub fn set_entry(name: String, data: String, service: String) -> String {
         let _ = set_keyring_key_with_name("authme", &name, &data);
     }
 
-    if s1 {
+    // CRITICAL FIX: If saving the primary encryption key, synchronize active key in memory and local fallback immediately
+    if name == "encryptionKey" || name.is_empty() {
+        set_active_key(data.clone());
+        save_fallback_key(&data);
+    }
+
+    if s1 || has_fallback_key() {
         "ok".into()
     } else {
         "error".into()
@@ -180,6 +263,7 @@ pub fn get_entry(name: String, service: String) -> String {
     if let Some(k) = get_keyring_key_with_name(&service, &name)
         .or_else(|| get_keyring_key_with_name("authme", &name))
         .or_else(|| get_keyring_key_with_name("authme_dev", &name))
+        .or_else(get_fallback_key)
     {
         return k;
     }
@@ -198,6 +282,10 @@ pub fn delete_entry(name: String, service: String) {
     if let Ok(entry) = keyring::Entry::new("authme_dev", key_name) {
         let _ = entry.delete_credential();
     }
+    if key_name == "encryptionKey" {
+        delete_fallback_key();
+        set_active_key("".to_string());
+    }
 }
 
 #[tauri::command]
@@ -210,6 +298,19 @@ pub fn receive_encryption_key(key: String) {
     set_active_key(key);
 }
 
+pub fn prime_existing_key() {
+    let active = get_active_key();
+    if !active.is_empty() && active != "error" {
+        return;
+    }
+    if let Some(k) = get_keyring_key("authme")
+        .or_else(|| get_keyring_key("authme_dev"))
+        .or_else(get_fallback_key)
+    {
+        set_active_key(k);
+    }
+}
+
 #[tauri::command]
 pub fn set_encryption_key(service: String) -> String {
     let active = get_active_key();
@@ -219,10 +320,14 @@ pub fn set_encryption_key(service: String) -> String {
 
     let key_opt = get_keyring_key(&service)
         .or_else(|| get_keyring_key("authme"))
-        .or_else(|| get_keyring_key("authme_dev"));
+        .or_else(|| get_keyring_key("authme_dev"))
+        .or_else(get_fallback_key);
 
     let key = match key_opt {
-        Some(k) => k,
+        Some(k) => {
+            sync_keyring_key(&k);
+            k
+        }
         None => {
             let new_key = generate_random_secure_key();
             sync_keyring_key(&new_key);
@@ -235,10 +340,10 @@ pub fn set_encryption_key(service: String) -> String {
 }
 
 #[cfg(test)]
-mod tests {
+pub mod tests {
     use super::*;
 
-    static TEST_MUTEX: Lazy<Mutex<()>> = Lazy::new(|| Mutex::new(()));
+    pub static TEST_MUTEX: Lazy<Mutex<()>> = Lazy::new(|| Mutex::new(()));
 
     #[test]
     fn test_decrypt_empty_data() {
@@ -276,6 +381,45 @@ mod tests {
         assert_eq!(res, "ok");
         assert_eq!(get_active_key(), test_key);
     }
+
+    #[test]
+    fn test_set_entry_updates_active_key_and_fallback() {
+        let _guard = TEST_MUTEX.lock().unwrap();
+        clear_encryption_key();
+
+        let new_test_key = "brand_new_key_from_frontend_32";
+        let res = set_entry("encryptionKey".to_string(), new_test_key.to_string(), "authme".to_string());
+        assert_eq!(res, "ok");
+        assert_eq!(get_active_key(), new_test_key);
+        assert_eq!(get_fallback_key(), Some(new_test_key.to_string()));
+
+        // Encrypt data with this active key
+        let secret = "OTP Secret 12345";
+        let enc = encrypt_data(secret.to_string());
+
+        // Simulate app restart: clear active key in memory
+        clear_encryption_key();
+        assert_eq!(get_active_key(), "");
+
+        // Decrypt must recover key from fallback/keyring and succeed!
+        let dec = decrypt_data(enc);
+        assert_eq!(dec, secret);
+        assert_eq!(get_active_key(), new_test_key);
+
+        // Clean up
+        delete_entry("encryptionKey".to_string(), "authme".to_string());
+        assert_eq!(get_active_key(), "");
+        assert_eq!(get_fallback_key(), None);
+    }
+
+    #[test]
+    fn test_prime_existing_key_does_not_generate_unrequested_key() {
+        let _guard = TEST_MUTEX.lock().unwrap();
+        clear_encryption_key();
+        delete_entry("encryptionKey".to_string(), "authme".to_string());
+
+        // When no key exists, prime_existing_key must NOT generate a key or modify memory
+        prime_existing_key();
+        assert_eq!(get_active_key(), "");
+    }
 }
-
-

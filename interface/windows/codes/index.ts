@@ -1734,6 +1734,9 @@ export const preloadCodes = async (): Promise<void> => {
 			isCodesLoading.set(true)
 			if (currentSettings.security?.requireAuthentication === false) {
 				await setEncryptionKey()
+			} else {
+				isCodesLoading.set(false)
+				return
 			}
 			if (currentSettings.vault?.codes) {
 				if (cachedEncryptedVault !== currentSettings.vault.codes || cachedDecryptedVault === null) {
