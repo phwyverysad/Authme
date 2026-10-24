@@ -120,7 +120,7 @@
 				<h2>{language.codes.importCodes}</h2>
 				<h3>{language.codes.importCodesText}</h3>
 				<div class="mx-auto mt-6 flex flex-row items-center justify-center gap-3 sm:flex-wrap">
-					<button class="button px-6 py-2.5 rounded-full flex items-center gap-2 text-sm font-semibold shadow-md bg-white text-slate-900 hover:bg-slate-100 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100 transition-all mx-auto active:scale-95" on:click={() => navigate("import")}>
+					<button class="button px-6 py-2.5 rounded-full flex items-center gap-2 text-sm font-semibold shadow-md bg-white text-slate-900 hover:bg-slate-100 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100 transition-all active:scale-95" on:click={() => navigate("import")}>
 						<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 							<path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
 							<polyline points="10 17 15 12 10 7" />
@@ -128,6 +128,22 @@
 						</svg>
 						<span>{language.codes.importCodesButton}</span>
 					</button>
+					{#if hasCorruptedVault}
+						<button
+							class="button px-5 py-2.5 rounded-full flex items-center gap-2 text-sm font-semibold shadow-md bg-rose-500/15 text-rose-600 hover:bg-rose-500/25 dark:bg-rose-500/20 dark:text-rose-400 dark:hover:bg-rose-500/30 transition-all active:scale-95 border border-rose-500/30"
+							on:click={resetAndImport}
+							title={language.codes?.resetCorruptedVault || "ล้างข้อมูลเดิมและนำเข้าใหม่"}
+						>
+							<svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+								<path d="M3 6h18"/>
+								<path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
+								<path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+								<line x1="10" y1="11" x2="10" y2="17"/>
+								<line x1="14" y1="11" x2="14" y2="17"/>
+							</svg>
+							<span>{language.codes?.resetCorruptedVault || "ล้างข้อมูลเดิมและนำเข้าใหม่"}</span>
+						</button>
+					{/if}
 				</div>
 			</div>
 		{/if}
@@ -168,8 +184,24 @@
 	import { navigate } from "../../utils/navigate"
 	import { getLanguage, currentLanguage } from "@utils/language"
 	import { state } from "../../stores/state"
+	import { getSettings, setSettings } from "../../stores/settings"
 
 	let language = getLanguage()
+	$: hasCorruptedVault = Boolean(getSettings()?.vault?.codes && !$hasCodesStore && !$isCodesLoading)
+
+	async function resetAndImport() {
+		const s = getSettings()
+		if (s) {
+			setSettings({
+				...s,
+				vault: {
+					...s.vault,
+					codes: null
+				}
+			})
+		}
+		navigate("import")
+	}
 	$: language = $currentLanguage || getLanguage()
 
 	// Ensure codes are reloaded whenever on /codes or /idle or when new codes are imported

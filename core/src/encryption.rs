@@ -29,13 +29,19 @@ fn set_active_key(key: String) {
     *ENCRYPTION_KEY.lock().unwrap_or_else(|e| e.into_inner()) = key;
 }
 
-fn get_fallback_key_path() -> PathBuf {
+fn get_fallback_key_paths() -> Vec<PathBuf> {
+    let mut paths = Vec::new();
     #[cfg(target_os = "windows")]
     {
         if let Ok(appdata) = std::env::var("APPDATA") {
             let p = PathBuf::from(appdata).join("com.levminer.authme");
             let _ = fs::create_dir_all(&p);
-            return p.join(".vault_key");
+            paths.push(p.join(".vault_key"));
+        }
+        if let Ok(local) = std::env::var("LOCALAPPDATA") {
+            let p = PathBuf::from(local).join("com.levminer.authme");
+            let _ = fs::create_dir_all(&p);
+            paths.push(p.join(".vault_key"));
         }
     }
     #[cfg(target_os = "macos")]
@@ -43,7 +49,7 @@ fn get_fallback_key_path() -> PathBuf {
         if let Ok(home) = std::env::var("HOME") {
             let p = PathBuf::from(home).join("Library/Application Support/com.levminer.authme");
             let _ = fs::create_dir_all(&p);
-            return p.join(".vault_key");
+            paths.push(p.join(".vault_key"));
         }
     }
     #[cfg(target_os = "linux")]
@@ -51,10 +57,13 @@ fn get_fallback_key_path() -> PathBuf {
         if let Ok(home) = std::env::var("HOME") {
             let p = PathBuf::from(home).join(".config/com.levminer.authme");
             let _ = fs::create_dir_all(&p);
-            return p.join(".vault_key");
+            paths.push(p.join(".vault_key"));
         }
     }
-    PathBuf::from(".vault_key")
+    if paths.is_empty() {
+        paths.push(PathBuf::from(".vault_key"));
+    }
+    paths
 }
 
 pub fn save_fallback_key(key: &str) {
@@ -62,24 +71,27 @@ pub fn save_fallback_key(key: &str) {
     if trimmed.is_empty() || trimmed == "error" {
         return;
     }
-    let path = get_fallback_key_path();
-    let _ = fs::write(path, trimmed);
+    for path in get_fallback_key_paths() {
+        let _ = fs::write(path, trimmed);
+    }
 }
 
 pub fn get_fallback_key() -> Option<String> {
-    let path = get_fallback_key_path();
-    if let Ok(contents) = fs::read_to_string(path) {
-        let trimmed = contents.trim().to_string();
-        if !trimmed.is_empty() && trimmed != "error" {
-            return Some(trimmed);
+    for path in get_fallback_key_paths() {
+        if let Ok(contents) = fs::read_to_string(path) {
+            let trimmed = contents.trim().to_string();
+            if !trimmed.is_empty() && trimmed != "error" {
+                return Some(trimmed);
+            }
         }
     }
     None
 }
 
 pub fn delete_fallback_key() {
-    let path = get_fallback_key_path();
-    let _ = fs::remove_file(path);
+    for path in get_fallback_key_paths() {
+        let _ = fs::remove_file(path);
+    }
 }
 
 pub fn has_fallback_key() -> bool {
@@ -167,6 +179,7 @@ pub fn encrypt_data(data: String) -> String {
             key = generate_random_secure_key();
             set_active_key(key.clone());
             sync_keyring_key(&key);
+            save_fallback_key(&key);
         }
     }
 

@@ -23,15 +23,23 @@ export const encryptData = async (data: string): Promise<string> => {
 	return await invoke("encrypt_data", { data })
 }
 
+let lastDecryptErrorTime = 0
+
 /**
  * Decrypts a string with the encryption key
+ * @param data Ciphertext to decrypt
+ * @param silent When true, skips showing popup dialog on failure (e.g. for background speculative preload)
  */
-export const decryptData = async (data: string): Promise<string> => {
+export const decryptData = async (data: string, silent: boolean = false): Promise<string> => {
 	if (!data || data.trim() === "") return ""
 	const res: string = await invoke("decrypt_data", { data })
 
-	if (res === "error") {
-		dialog.message(getLanguage().encryption?.decryptFailed || "Failed to decrypt your vault! Please restart Authme and try again.", { kind: "error" })
+	if (res === "error" && !silent) {
+		const now = Date.now()
+		if (now - lastDecryptErrorTime > 8000) {
+			lastDecryptErrorTime = now
+			dialog.message(getLanguage().encryption?.decryptFailed || "Failed to decrypt your vault! Please restart Authme and try again.", { kind: "error" })
+		}
 	}
 
 	return res

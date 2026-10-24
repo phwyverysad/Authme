@@ -77,6 +77,7 @@ export const localeTH = {
 		"importCodes": "นำเข้ารหัส 2FA ของคุณ",
 		"importCodesText": "นำเข้ารหัส 2FA ที่มีอยู่แล้วของคุณในหน้านำเข้า",
 		"importCodesButton": "นำเข้ารหัส",
+		"resetCorruptedVault": "ล้างข้อมูลเดิมและนำเข้าใหม่",
 		"searchPlaceholder": "ค้นหาบัญชี 2FA...",
 		"noSearchResultsFound": "ไม่พบผลการค้นหา",
 		"noSearchResultsFoundText": "ไม่พบผลการค้นหาสำหรับ",

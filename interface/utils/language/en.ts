@@ -77,6 +77,7 @@ export const localeEN = {
 		"importCodes": "Import your 2FA codes",
 		"importCodesText": "Import your existing 2FA codes on the Import page.",
 		"importCodesButton": "Import codes",
+		"resetCorruptedVault": "Reset Vault & Import Fresh",
 		"searchPlaceholder": "Search 2FA accounts...",
 		"noSearchResultsFound": "No search results found",
 		"noSearchResultsFoundText": "Not found search results for",

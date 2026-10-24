@@ -1740,7 +1740,7 @@ export const preloadCodes = async (): Promise<void> => {
 			}
 			if (currentSettings.vault?.codes) {
 				if (cachedEncryptedVault !== currentSettings.vault.codes || cachedDecryptedVault === null) {
-					const decryptedText = await decryptData(currentSettings.vault.codes)
+					const decryptedText = await decryptData(currentSettings.vault.codes, true)
 					if (decryptedText && decryptedText !== "error") {
 						cachedEncryptedVault = currentSettings.vault.codes
 						cachedDecryptedVault = decryptedText
@@ -1824,6 +1824,15 @@ const executeLoadCodes = async () => {
 			decryptedText = await decryptData(currentSettings.vault.codes)
 			if (!decryptedText || decryptedText === "error") {
 				logger.error("Could not decrypt saved vault codes")
+				if (curState.importData !== null) {
+					// User imported new codes to recover or replace
+					saveText = curState.importData
+					const codes = textConverter(curState.importData, currentSettings.settings.sortCodes)
+					logger.log(`Recovered vault with newly imported codes. Count: ${codes.names.length}`)
+					generateCodeElements(codes)
+					saveCodes()
+					return
+				}
 				hasCodesStore.set(false)
 				availableCodeCategories.set([])
 				generateCodeElements({ names: [], secrets: [], issuers: [], uniqIds: [] })
