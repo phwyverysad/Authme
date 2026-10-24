@@ -147,15 +147,20 @@
 	let editError = ""
 	let isSavingEdit = false
 	let dynamicBrandLogoUrl = ""
+	let lastEditTarget: any = null
 
-	$: if ($activeEditModal) {
-		editIssuer = $activeEditModal.issuer || ""
-		editName = cleanAccountName($activeEditModal.name || "", editIssuer)
+	$: if ($activeEditModal && $activeEditModal !== lastEditTarget) {
+		lastEditTarget = $activeEditModal
+		const initialIssuer = $activeEditModal.issuer || ""
+		editIssuer = initialIssuer
+		editName = cleanAccountName($activeEditModal.name || "", initialIssuer)
 		editSecret = $activeEditModal.secret || ""
 		showEditSecret = false
 		editError = ""
 		isSavingEdit = false
 		dynamicBrandLogoUrl = ""
+	} else if (!$activeEditModal) {
+		lastEditTarget = null
 	}
 
 	$: liveIcon = getServiceIcon(editIssuer, editName)
@@ -194,11 +199,7 @@
 		showToast(language.edit?.copySecretSuccess || "Secret key copied to clipboard", "success")
 	}
 
-	const selectIssuerSuggestion = (brand: string) => {
-		editIssuer = brand
-	}
-
-	const saveEditModal = async () => {
+		const saveEditModal = async () => {
 		if (!$activeEditModal || isSavingEdit) return
 		const idx = $activeEditModal.index
 		const newIssuer = editIssuer.trim()
@@ -880,40 +881,40 @@
 	<div
 		role="presentation"
 		tabindex="-1"
-		transition:fade={{ duration: 160 }}
-		class="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/65 backdrop-blur-md overflow-y-auto"
+		transition:fade={{ duration: 150 }}
+		class="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md overflow-y-auto"
 		on:click|self={() => activeEditModal.set(null)}
 		on:keydown|self={(e) => e.key === "Escape" && activeEditModal.set(null)}
 	>
 		<div
-			transition:scale={{ start: 0.94, duration: 200 }}
-			class="relative w-full max-w-lg rounded-3xl p-6 sm:p-7 shadow-2xl border text-left my-8 transition-all
-				bg-white/95 dark:bg-[#0f172a]/95 backdrop-blur-2xl text-slate-900 dark:text-white
-				border-slate-200/90 dark:border-slate-700/80 dark:ring-1 dark:ring-white/10 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.5)]"
+			transition:scale={{ start: 0.95, duration: 180 }}
+			class="relative w-full max-w-md rounded-2xl p-6 shadow-2xl border text-left my-8 transition-all
+				bg-white dark:bg-[#0f172a] text-slate-900 dark:text-white
+				border-slate-200 dark:border-slate-800 shadow-[0_20px_50px_rgba(0,0,0,0.4)]"
 		>
-			<!-- Top Header: Dynamic Brand Badge + Title + Close Button -->
-			<div class="flex items-start justify-between mb-5">
-				<div class="flex items-center gap-3.5 min-w-0">
-					<!-- Real-time Brand Icon Badge -->
+			<!-- Top Header: Dynamic Brand Icon + Title + Close Button -->
+			<div class="flex items-center justify-between mb-5">
+				<div class="flex items-center gap-3 min-w-0">
+					<!-- Brand Icon -->
 					<div
-						class="w-[52px] h-[52px] min-w-[52px] rounded-2xl flex items-center justify-center overflow-hidden shadow-md select-none transition-all duration-300 ring-2 ring-white/10"
+						class="w-11 h-11 min-w-[44px] rounded-xl flex items-center justify-center overflow-hidden shadow-sm select-none transition-all duration-300"
 						style={liveIcon.bg}
 					>
 						{#if dynamicBrandLogoUrl}
-							<img src={dynamicBrandLogoUrl} alt={editIssuer || "Brand"} class="w-8 h-8 object-contain drop-shadow" />
+							<img src={dynamicBrandLogoUrl} alt={editIssuer || "Brand"} class="w-6 h-6 object-contain drop-shadow-sm" />
 						{:else}
-							<div class="w-full h-full flex items-center justify-center scale-105">
+							<div class="w-full h-full flex items-center justify-center scale-95">
 								{@html liveIcon.svg}
 							</div>
 						{/if}
 					</div>
 
 					<div class="min-w-0">
-						<h3 class="text-xl font-bold leading-tight tracking-tight truncate text-slate-900 dark:text-white">
-							{language.edit?.editModalTitle || "Edit 2FA Details"}
+						<h3 class="text-lg font-bold leading-tight tracking-tight truncate text-slate-900 dark:text-white">
+							{language.edit?.editModalTitle || "แก้ไขข้อมูลรหัส 2FA"}
 						</h3>
 						<p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate">
-							{language.edit?.editModalSubtitle || "Customize service name, account, and secret key"}
+							{cleanAccountName(editName.trim(), editIssuer) || editIssuer || language.edit?.editCodes || "2FA"}
 						</p>
 					</div>
 				</div>
@@ -921,7 +922,7 @@
 				<button
 					type="button"
 					on:click={() => activeEditModal.set(null)}
-					class="text-slate-400 hover:text-slate-700 dark:hover:text-white p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors -mr-1 -mt-1"
+					class="text-slate-400 hover:text-slate-600 dark:hover:text-white p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors -mr-1"
 					title={language.common?.close || "Close"}
 				>
 					<svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -931,55 +932,7 @@
 				</button>
 			</div>
 
-			<!-- Live Card Preview -->
-			<div class="mb-5 rounded-2xl p-3.5 bg-slate-100/80 dark:bg-slate-800/60 border border-slate-200/90 dark:border-slate-700/60 backdrop-blur-sm">
-				<div class="flex items-center justify-between mb-2">
-					<span class="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-						<span class="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-pulse"></span>
-						{language.edit?.livePreview || "Live Preview"}
-					</span>
-					<span class="text-[10px] font-medium text-slate-500 dark:text-slate-400 bg-slate-200/80 dark:bg-slate-700/80 px-2 py-0.5 rounded-md">
-						{language.edit?.livePreview || "2FA Preview"}
-					</span>
-				</div>
-
-				<div class="flex items-center gap-3 bg-white/95 dark:bg-[#0b1120]/80 rounded-xl p-3 border border-slate-200/80 dark:border-slate-700/50 shadow-sm">
-					<!-- Preview Icon -->
-					<div
-						class="w-11 h-11 rounded-xl flex items-center justify-center overflow-hidden flex-shrink-0 shadow-sm"
-						style={liveIcon.bg}
-					>
-						{#if dynamicBrandLogoUrl}
-							<img src={dynamicBrandLogoUrl} alt="" class="w-6 h-6 object-contain" />
-						{:else}
-							<div class="w-full h-full flex items-center justify-center scale-90">
-								{@html liveIcon.svg}
-							</div>
-						{/if}
-					</div>
-
-					<!-- Preview Info -->
-					<div class="min-w-0 flex-1 text-left">
-						<p class="text-sm font-bold text-slate-900 dark:text-white truncate">
-							{editIssuer.trim() || cleanAccountName(editName.trim(), editIssuer) || "2FA Service"}
-						</p>
-						{#if editIssuer.trim() && cleanAccountName(editName.trim(), editIssuer)}
-							<p class="text-xs text-slate-500 dark:text-slate-400 truncate">
-								{cleanAccountName(editName.trim(), editIssuer)}
-							</p>
-						{/if}
-					</div>
-
-					<!-- Preview Code Sample -->
-					<div class="text-right flex-shrink-0">
-						<span class="font-mono text-sm sm:text-base font-bold text-blue-600 dark:text-blue-400 tracking-wider">
-							••• •••
-						</span>
-					</div>
-				</div>
-			</div>
-
-			<!-- Edit Form -->
+			<!-- Clean Form -->
 			<form on:submit|preventDefault={saveEditModal} class="space-y-4">
 				{#if editError}
 					<div class="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-500 text-xs font-medium flex items-center gap-2">
@@ -990,21 +943,9 @@
 
 				<!-- Field 1: Service / Issuer -->
 				<div>
-					<div class="flex items-center justify-between mb-1.5">
-						<label for="edit-issuer" class="block text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">
-							{language.edit?.serviceName || "Service / Issuer"}
-						</label>
-						{#if editIssuer}
-							<button
-								type="button"
-								on:click={() => (editIssuer = "")}
-								class="text-[11px] text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-							>
-								{language.dialogs?.clearText || language.common?.clear || "Clear"}
-							</button>
-						{/if}
-					</div>
-
+					<label for="edit-issuer" class="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1.5">
+						{language.edit?.serviceName || "ชื่อบริการ / ผู้ให้บริการ"}
+					</label>
 					<div class="relative">
 						<div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
 							<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1018,47 +959,18 @@
 							id="edit-issuer"
 							type="text"
 							bind:value={editIssuer}
-							placeholder={language.edit?.serviceNamePlaceholder || "e.g. Google, GitHub, Discord, Vercel"}
-							class="w-full pl-10 pr-4 py-2.5 rounded-xl border font-medium text-sm transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500
-								bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700/80 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500"
+							placeholder={language.edit?.serviceNamePlaceholder || "เช่น Google, GitHub"}
+							class="w-full pl-10 pr-4 py-2.5 rounded-xl border text-sm transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500
+								bg-slate-50 dark:bg-slate-800/70 border-slate-200 dark:border-slate-700/80 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500"
 						/>
-					</div>
-
-					<!-- Quick Service Suggestion Chips -->
-					<div class="flex flex-wrap items-center gap-1.5 mt-2">
-						<span class="text-[11px] text-slate-400 dark:text-slate-500 mr-0.5">{language.dialogs?.suggested || "Suggested:"}</span>
-						{#each ["Discord", "Google", "GitHub", "Microsoft", "Vercel", "Stripe", "Roblox", "Steam"] as brand}
-							<button
-								type="button"
-								on:click={() => selectIssuerSuggestion(brand)}
-								class="px-2 py-0.5 text-[11px] rounded-lg font-medium transition-all active:scale-95
-									{editIssuer.toLowerCase() === brand.toLowerCase()
-										? 'bg-blue-600 text-white shadow-sm'
-										: 'bg-slate-200/60 dark:bg-slate-800/60 hover:bg-slate-300/80 dark:hover:bg-slate-700/80 text-slate-600 dark:text-slate-300'}"
-							>
-								{brand}
-							</button>
-						{/each}
 					</div>
 				</div>
 
 				<!-- Field 2: Account / Email -->
 				<div>
-					<div class="flex items-center justify-between mb-1.5">
-						<label for="edit-name" class="block text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">
-							{language.edit?.accountName || "Account / Email"}
-						</label>
-						{#if editName}
-							<button
-								type="button"
-								on:click={() => (editName = "")}
-								class="text-[11px] text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-							>
-								{language.dialogs?.clearText || language.common?.clear || "Clear"}
-							</button>
-						{/if}
-					</div>
-
+					<label for="edit-name" class="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1.5">
+						{language.edit?.accountName || "ชื่อบัญชี / อีเมล"}
+					</label>
 					<div class="relative">
 						<div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
 							<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1070,9 +982,9 @@
 							id="edit-name"
 							type="text"
 							bind:value={editName}
-							placeholder={language.edit?.accountNamePlaceholder || "e.g. user@example.com or @username"}
-							class="w-full pl-10 pr-4 py-2.5 rounded-xl border font-medium text-sm transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500
-								bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700/80 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500"
+							placeholder={language.edit?.accountNamePlaceholder || "เช่น user@example.com"}
+							class="w-full pl-10 pr-4 py-2.5 rounded-xl border text-sm transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500
+								bg-slate-50 dark:bg-slate-800/70 border-slate-200 dark:border-slate-700/80 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500"
 						/>
 					</div>
 				</div>
@@ -1080,23 +992,17 @@
 				<!-- Field 3: Secret Key -->
 				<div>
 					<div class="flex items-center justify-between mb-1.5">
-						<label for="edit-secret" class="block text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-							<span>{language.edit?.secretKey || "2FA Secret Key"}</span>
-							{#if editSecret && isSecretValid}
-								<span class="text-[10px] normal-case text-emerald-500 font-medium">{language.dialogs?.valid || "✓ Valid"}</span>
-							{:else if editSecret && !isSecretValid}
-								<span class="text-[10px] normal-case text-rose-500 font-medium">{language.dialogs?.base32Only || "⚠ Base32 only"}</span>
-							{/if}
+						<label for="edit-secret" class="block text-xs font-medium text-slate-600 dark:text-slate-300">
+							{language.edit?.secretKey || "คีย์ลับ 2FA"}
 						</label>
-
 						{#if editSecret}
 							<button
 								type="button"
 								on:click={copyEditSecret}
-								class="text-[11px] text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+								class="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
 							>
-								<svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
-								{language.dialogs?.copyKey || language.codes?.copySecret || "Copy key"}
+								<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+								<span>{language.dialogs?.copyKey || language.codes?.copySecret || "คัดลอก"}</span>
 							</button>
 						{/if}
 					</div>
@@ -1115,20 +1021,20 @@
 								id="edit-secret"
 								type="text"
 								bind:value={editSecret}
-								placeholder={language.edit?.secretKeyPlaceholder || "Base32 secret (e.g. JBSWY3DPEHPK3PXP)"}
-								class="w-full pl-10 pr-10 py-2.5 rounded-xl border font-mono text-xs sm:text-sm tracking-wider transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500
-									bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700/80 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500
-									{!isSecretValid && editSecret ? 'border-rose-500 focus:ring-rose-500/50' : ''}"
+								placeholder={language.edit?.secretKeyPlaceholder || "Base32 secret"}
+								class="w-full pl-10 pr-10 py-2.5 rounded-xl border font-mono text-xs sm:text-sm tracking-wider transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500
+									bg-slate-50 dark:bg-slate-800/70 border-slate-200 dark:border-slate-700/80 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500
+									{!isSecretValid && editSecret ? 'border-rose-500 focus:ring-rose-500/40' : ''}"
 							/>
 						{:else}
 							<input
 								id="edit-secret"
 								type="password"
 								bind:value={editSecret}
-								placeholder={language.edit?.secretKeyPlaceholder || "Base32 secret (e.g. JBSWY3DPEHPK3PXP)"}
-								class="w-full pl-10 pr-10 py-2.5 rounded-xl border font-mono text-xs sm:text-sm tracking-wider transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500
-									bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700/80 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500
-									{!isSecretValid && editSecret ? 'border-rose-500 focus:ring-rose-500/50' : ''}"
+								placeholder={language.edit?.secretKeyPlaceholder || "Base32 secret"}
+								class="w-full pl-10 pr-10 py-2.5 rounded-xl border font-mono text-xs sm:text-sm tracking-wider transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500
+									bg-slate-50 dark:bg-slate-800/70 border-slate-200 dark:border-slate-700/80 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500
+									{!isSecretValid && editSecret ? 'border-rose-500 focus:ring-rose-500/40' : ''}"
 							/>
 						{/if}
 
@@ -1136,7 +1042,7 @@
 							type="button"
 							on:click={() => (showEditSecret = !showEditSecret)}
 							class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-							title={showEditSecret ? (language.dialogs?.hideSecret || "Hide secret key") : (language.dialogs?.showSecret || "Show secret key")}
+							title={showEditSecret ? (language.dialogs?.hideSecret || "Hide secret") : (language.dialogs?.showSecret || "Show secret")}
 						>
 							{#if showEditSecret}
 								<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
@@ -1145,30 +1051,31 @@
 							{/if}
 						</button>
 					</div>
+
+					{#if editSecret && !isSecretValid}
+						<p class="text-xs text-rose-500 mt-1 font-medium">{language.edit?.invalidSecret || "คีย์ลับต้องเป็นรูปแบบ Base32 (A-Z, 2-7)"}</p>
+					{/if}
 				</div>
 
-				<!-- Action Buttons -->
-				<div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-200/70 dark:border-slate-700/50">
+				<!-- Clean Action Buttons -->
+				<div class="flex items-center justify-end gap-3 pt-3">
 					<button
 						type="button"
 						on:click={() => activeEditModal.set(null)}
-						class="px-5 py-2.5 rounded-xl font-medium text-sm border border-slate-300 dark:border-slate-700/80 hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-all text-slate-700 dark:text-slate-200 active:scale-95"
+						class="px-4 py-2.5 rounded-xl font-medium text-sm border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all text-slate-700 dark:text-slate-200 active:scale-95"
 					>
 						{language.common?.cancel || "Cancel"}
 					</button>
 					<button
 						type="submit"
 						disabled={!isSecretValid || isSavingEdit}
-						class="px-6 py-2.5 rounded-xl font-semibold text-sm bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-lg shadow-blue-500/25 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+						class="px-5 py-2.5 rounded-xl font-medium text-sm bg-blue-600 hover:bg-blue-500 text-white shadow-md shadow-blue-500/20 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
 					>
 						{#if isSavingEdit}
 							<svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
 							<span>{language.common?.saving || "Saving..."}</span>
 						{:else}
-							<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-								<polyline points="20 6 9 17 4 12"/>
-							</svg>
-							<span>{language.edit?.saveChanges || "Save Changes"}</span>
+							<span>{language.edit?.saveChanges || "Save"}</span>
 						{/if}
 					</button>
 				</div>
