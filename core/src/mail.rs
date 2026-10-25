@@ -409,13 +409,23 @@ pub fn extract_inbox_email_from_title(s: &str) -> Option<String> {
     if let Some(open) = s.find("[AUTHME_INBOX:") {
         if let Some(close) = s[open..].find(']') {
             let inside = &s[open + 14..open + close];
-            return clean_email_str(inside);
+            let email_part = if let Some(pipe) = inside.find('|') {
+                &inside[..pipe]
+            } else {
+                inside
+            };
+            return clean_email_str(email_part);
         }
     }
     if let Some(open) = s.find("[INBOX:") {
         if let Some(close) = s[open..].find(']') {
             let inside = &s[open + 7..open + close];
-            return clean_email_str(inside);
+            let email_part = if let Some(pipe) = inside.find('|') {
+                &inside[..pipe]
+            } else {
+                inside
+            };
+            return clean_email_str(email_part);
         }
     }
 
@@ -454,6 +464,34 @@ pub fn extract_inbox_email_from_title(s: &str) -> Option<String> {
 
     if is_mail_context {
         return clean_email_str(s);
+    }
+    None
+}
+
+pub fn extract_inbox_name_from_title(s: &str) -> Option<String> {
+    if let Some(open) = s.find("[AUTHME_INBOX:") {
+        if let Some(close) = s[open..].find(']') {
+            let inside = &s[open + 14..open + close];
+            if let Some(name_pos) = inside.find("|NAME:") {
+                let name = &inside[name_pos + 6..];
+                if !name.trim().is_empty() {
+                    return Some(name.trim().to_string());
+                }
+            }
+        }
+    }
+    // Also parse Outlook title pattern: ... - Name - Outlook
+    let clean = if let Some(bracket) = s.find('[') {
+        &s[..bracket]
+    } else {
+        s
+    };
+    let parts: Vec<&str> = clean.split('-').map(|p| p.trim()).collect();
+    if parts.len() >= 3 && parts.last().map(|p| p.to_lowercase().contains("outlook")).unwrap_or(false) {
+        let candidate = parts[parts.len() - 2];
+        if !candidate.is_empty() && candidate.len() <= 60 && !candidate.contains('@') {
+            return Some(candidate.to_string());
+        }
     }
     None
 }
@@ -677,20 +715,56 @@ async fn create_embedded_webview(
                 try {{
                     const title = document.title || '';
                     const titleMatch = title.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{{2,}}/);
-                    if (titleMatch) return titleMatch[0].toLowerCase();
+                    if (titleMatch) return titleMatch[0].toLowerCase().trim();
 
-                    const gAcc = document.querySelector('a[aria-label*="@"], button[aria-label*="@"], div[aria-label*="@"], [data-email*="@"]');
+                    // Outlook / Microsoft: check localStorage and sessionStorage for upn / LokiAuthToken
+                    try {{
+                        for (let i = 0; i < localStorage.length; i++) {{
+                            const k = localStorage.key(i) || '';
+                            const v = localStorage.getItem(k) || '';
+                            if (v.includes('"upn"')) {{
+                                const m = v.match(/"upn"\s*:\s*"([^"]+@[^"]+)"/i);
+                                if (m && m[1]) return m[1].toLowerCase().trim();
+                            }}
+                        }}
+                    }} catch(e) {{}}
+
+                    try {{
+                        for (let i = 0; i < sessionStorage.length; i++) {{
+                            const k = sessionStorage.key(i) || '';
+                            if (k.includes('LokiAuthToken') && k.includes('@')) {{
+                                const m = k.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{{2,}}/);
+                                if (m) return m[0].toLowerCase().trim();
+                            }}
+                            const v = sessionStorage.getItem(k) || '';
+                            if (v.includes('"upn"')) {{
+                                const m = v.match(/"upn"\s*:\s*"([^"]+@[^"]+)"/i);
+                                if (m && m[1]) return m[1].toLowerCase().trim();
+                            }}
+                        }}
+                    }} catch(e) {{}}
+
+                    // Outlook / Microsoft window contexts
+                    try {{
+                        if (window.UserContext && window.UserContext.UserEmail) return window.UserContext.UserEmail.toLowerCase().trim();
+                        if (window.UserContext && window.UserContext.PrimarySmtpAddress) return window.UserContext.PrimarySmtpAddress.toLowerCase().trim();
+                        if (window.O365_Header && window.O365_Header.userEmail) return window.O365_Header.userEmail.toLowerCase().trim();
+                    }} catch(e) {{}}
+
+                    // Microsoft profile button
+                    const msBtn = document.querySelector('button[id*="O365_MainLink_Me"], button[id*="meControl"], button[data-automation-id="meControl"], button[aria-label*="Account manager"], button[aria-label*="ผู้จัดการบัญชี"], #O365_MainLink_Me');
+                    if (msBtn) {{
+                        const str = msBtn.getAttribute('aria-label') || msBtn.getAttribute('title') || msBtn.getAttribute('data-user') || '';
+                        const m = str.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{{2,}}/);
+                        if (m) return m[0].toLowerCase().trim();
+                    }}
+
+                    // Google Account button
+                    const gAcc = document.querySelector('a[aria-label*="Google Account"], a[aria-label*="บัญชี Google"], a[href*="accounts.google.com"], [data-email*="@"]');
                     if (gAcc) {{
                         const str = gAcc.getAttribute('aria-label') || gAcc.getAttribute('data-email') || gAcc.getAttribute('title') || '';
                         const m = str.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{{2,}}/);
-                        if (m) return m[0].toLowerCase();
-                    }}
-
-                    const msBtn = document.querySelector('button[id*="O365_MainLink_Me"], button[aria-label*="Account manager"], button[aria-label*="@"], div[title*="@"], [data-user*="@"]');
-                    if (msBtn) {{
-                        const str = msBtn.getAttribute('aria-label') || msBtn.getAttribute('title') || msBtn.getAttribute('data-user') || msBtn.textContent || '';
-                        const m = str.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{{2,}}/);
-                        if (m) return m[0].toLowerCase();
+                        if (m) return m[0].toLowerCase().trim();
                     }}
 
                     try {{
@@ -701,27 +775,34 @@ async fn create_embedded_webview(
                         }}
                     }} catch(e) {{}}
 
-                    if (capturedEmail && capturedEmail.includes('@')) return capturedEmail.toLowerCase();
+                    if (capturedEmail && capturedEmail.includes('@')) return capturedEmail.toLowerCase().trim();
 
                     try {{
                         const s = sessionStorage.getItem('__authme_login_email');
-                        if (s && s.includes('@')) return s.toLowerCase();
+                        if (s && s.includes('@')) return s.toLowerCase().trim();
                     }} catch(e) {{}}
 
-                    const generic = document.querySelector('[aria-label*="@"], [data-user*="@"], [data-account*="@"]');
-                    if (generic) {{
-                        const str = generic.getAttribute('aria-label') || generic.getAttribute('data-user') || generic.getAttribute('data-account') || '';
-                        const m = str.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{{2,}}/);
-                        if (m) return m[0].toLowerCase();
-                    }}
-
                     if (window.location.hostname.includes('icloud.com')) {{
-                        const icloudEl = document.querySelector('[data-test-id*="account-name"], [class*="AccountName"], [class*="account-menu"], [aria-label*="@"], span[title*="@"]');
+                        const icloudEl = document.querySelector('[data-test-id*="account-name"], [class*="AccountName"], [class*="account-menu"], span[title*="@"]');
                         if (icloudEl) {{
                             const str = icloudEl.getAttribute('title') || icloudEl.getAttribute('aria-label') || icloudEl.textContent || '';
                             const m = str.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{{2,}}/);
-                            if (m) return m[0].toLowerCase();
+                            if (m) return m[0].toLowerCase().trim();
                         }}
+                    }}
+                }} catch(e) {{}}
+                return null;
+            }}
+
+            function extractDisplayName() {{
+                try {{
+                    const title = document.title || '';
+                    const m = title.match(/^(?:\(\d+\+?\)\s*)?(?:Mail|Posteingang|กล่องจดหมาย|Inbox|Boîte de réception)\s*-\s*([^-\[\]]+?)\s*-\s*Outlook/i);
+                    if (m && m[1] && !m[1].includes('@') && m[1].trim().length > 1) {{
+                        return m[1].trim();
+                    }}
+                    if (window.UserContext && window.UserContext.UserDisplayName) {{
+                        return window.UserContext.UserDisplayName.trim();
                     }}
                 }} catch(e) {{}}
                 return null;
@@ -758,7 +839,9 @@ async fn create_embedded_webview(
                             found = 'icloud@icloud.com';
                         }}
                         if (found && !document.title.includes('[AUTHME_INBOX:')) {{
-                            document.title = document.title + ' [AUTHME_INBOX:' + found + ']';
+                            const dName = extractDisplayName();
+                            const tag = '[AUTHME_INBOX:' + found + (dName ? '|NAME:' + dName : '') + ']';
+                            document.title = document.title + ' ' + tag;
                         }}
                     }}
                 }} catch(e) {{}}
@@ -953,6 +1036,7 @@ async fn create_embedded_webview(
             if let Some(email) = extract_inbox_email_from_title(&title) {
                 if let Some(clean_email) = clean_email_str(&email) {
                     record_detected_email(&id_for_title, &clean_email);
+                    let display_name = extract_inbox_name_from_title(&title);
 
                     // If currently in login mode, emit login-success and unregister
                     if is_login_session(&id_for_title) {
@@ -961,10 +1045,20 @@ async fn create_embedded_webview(
                             serde_json::json!({
                                 "id": id_for_title,
                                 "email": clean_email,
+                                "name": display_name,
                                 "title": title
                             }),
                         );
                         unregister_login_session(&id_for_title);
+                    } else {
+                        let _ = app_for_title.emit(
+                            "mail:account-identity-detected",
+                            serde_json::json!({
+                                "id": id_for_title,
+                                "email": clean_email,
+                                "name": display_name,
+                            }),
+                        );
                     }
                 }
             }
@@ -1019,24 +1113,70 @@ async fn create_embedded_webview(
                             const tm = title.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
                             if (tm) return tm[0].toLowerCase();
 
-                            const g = document.querySelector('a[aria-label*="@"], button[aria-label*="@"], div[aria-label*="@"]');
-                            if (g) {
-                                const m = (g.getAttribute('aria-label') || '').match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
-                                if (m) return m[0].toLowerCase();
-                            }
-                            const ms = document.querySelector('button[id*="O365_MainLink_Me"], button[aria-label*="Account manager"]');
+                            try {
+                                for (let i = 0; i < localStorage.length; i++) {
+                                    const k = localStorage.key(i) || '';
+                                    const v = localStorage.getItem(k) || '';
+                                    if (v.includes('"upn"')) {
+                                        const m = v.match(/"upn"\s*:\s*"([^"]+@[^"]+)"/i);
+                                        if (m && m[1]) return m[1].toLowerCase().trim();
+                                    }
+                                }
+                            } catch(e) {}
+
+                            try {
+                                for (let i = 0; i < sessionStorage.length; i++) {
+                                    const k = sessionStorage.key(i) || '';
+                                    if (k.includes('LokiAuthToken') && k.includes('@')) {
+                                        const m = k.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+                                        if (m) return m[0].toLowerCase().trim();
+                                    }
+                                    const v = sessionStorage.getItem(k) || '';
+                                    if (v.includes('"upn"')) {
+                                        const m = v.match(/"upn"\s*:\s*"([^"]+@[^"]+)"/i);
+                                        if (m && m[1]) return m[1].toLowerCase().trim();
+                                    }
+                                }
+                            } catch(e) {}
+
+                            try {
+                                if (window.UserContext && window.UserContext.UserEmail) return window.UserContext.UserEmail.toLowerCase().trim();
+                                if (window.UserContext && window.UserContext.PrimarySmtpAddress) return window.UserContext.PrimarySmtpAddress.toLowerCase().trim();
+                                if (window.O365_Header && window.O365_Header.userEmail) return window.O365_Header.userEmail.toLowerCase().trim();
+                            } catch(e) {}
+
+                            const ms = document.querySelector('button[id*="O365_MainLink_Me"], button[id*="meControl"], button[data-automation-id="meControl"], button[aria-label*="Account manager"], button[aria-label*="ผู้จัดการบัญชี"], #O365_MainLink_Me');
                             if (ms) {
-                                const m = (ms.getAttribute('aria-label') || ms.textContent || '').match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
-                                if (m) return m[0].toLowerCase();
+                                const m = (ms.getAttribute('aria-label') || ms.getAttribute('title') || ms.getAttribute('data-user') || '').match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+                                if (m) return m[0].toLowerCase().trim();
                             }
+
+                            const g = document.querySelector('a[aria-label*="Google Account"], a[aria-label*="บัญชี Google"], a[href*="accounts.google.com"], [data-email*="@"]');
+                            if (g) {
+                                const m = (g.getAttribute('aria-label') || g.getAttribute('data-email') || g.getAttribute('title') || '').match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+                                if (m) return m[0].toLowerCase().trim();
+                            }
+
                             try {
                                 const cm = document.cookie.match(/__authme_login_email=([^;]+)/);
                                 if (cm) return decodeURIComponent(cm[1]).trim().toLowerCase();
                             } catch(e) {}
                             return null;
                         })();
+
+                        const dName = (function() {
+                            try {
+                                const title = document.title || '';
+                                const m = title.match(/^(?:\(\d+\+?\)\s*)?(?:Mail|Posteingang|กล่องจดหมาย|Inbox|Boîte de réception)\s*-\s*([^-\[\]]+?)\s*-\s*Outlook/i);
+                                if (m && m[1] && !m[1].includes('@') && m[1].trim().length > 1) return m[1].trim();
+                                if (window.UserContext && window.UserContext.UserDisplayName) return window.UserContext.UserDisplayName.trim();
+                            } catch(e) {}
+                            return null;
+                        })();
+
                         if (email && !document.title.includes('[AUTHME_INBOX:')) {
-                            document.title = document.title + ' [AUTHME_INBOX:' + email + ']';
+                            const tag = '[AUTHME_INBOX:' + email + (dName ? '|NAME:' + dName : '') + ']';
+                            document.title = document.title + ' ' + tag;
                         }
                     })();
                 "#);
@@ -1713,6 +1853,19 @@ mod tests {
         assert_eq!(
             extract_inbox_email_from_title("[AUTHME_INBOX:woranat.fluke27@gmail.com]"),
             Some("woranat.fluke27@gmail.com".to_string())
+        );
+        // AUTHME_INBOX tag with NAME
+        assert_eq!(
+            extract_inbox_email_from_title("[AUTHME_INBOX:terriecarole19922219@hotmail.com|NAME:Abby Ramona]"),
+            Some("terriecarole19922219@hotmail.com".to_string())
+        );
+        assert_eq!(
+            extract_inbox_name_from_title("[AUTHME_INBOX:terriecarole19922219@hotmail.com|NAME:Abby Ramona]"),
+            Some("Abby Ramona".to_string())
+        );
+        assert_eq!(
+            extract_inbox_name_from_title("Mail - Abby Ramona - Outlook"),
+            Some("Abby Ramona".to_string())
         );
         // Must reject login titles
         assert_eq!(

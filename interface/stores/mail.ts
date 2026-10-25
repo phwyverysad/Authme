@@ -84,10 +84,10 @@ export const PROVIDER_CONFIGS: Record<
 		bg: "linear-gradient(135deg, #ea4335 0%, #c5221f 100%)",
 	},
 	outlook: {
-		name: "Outlook / Hotmail",
+		name: "Microsoft (Outlook / Hotmail)",
 		url: "https://go.microsoft.com/fwlink/p/?LinkID=2125442&deeplink=mail%2F&sessionId=72d4aaf5-8238-437b-ab37-ca0393b5dbde",
-		color: "#0078d4",
-		bg: "linear-gradient(135deg, #0078d4 0%, #005a9e 100%)",
+		color: "#00a4ef",
+		bg: "#ffffff",
 	},
 	yahoo: {
 		name: "Yahoo Mail",
@@ -149,12 +149,22 @@ export async function initMailStore() {
 				}
 			)
 
-			await listen<{ id: string; email: string; url: string; title: string }>(
+			await listen<{ id: string; email: string; name?: string; url: string; title: string }>(
 				"mail:login-success",
 				async (event) => {
-					const { id, email, url } = event.payload || {}
+					const { id, email, name, url } = event.payload || {}
 					if (id && email) {
-						await handleLoginSuccess(id, email, url)
+						await handleLoginSuccess(id, email, url, name)
+					}
+				}
+			)
+
+			await listen<{ id: string; email: string; name?: string }>(
+				"mail:account-identity-detected",
+				(event) => {
+					const { id, email, name } = event.payload || {}
+					if (id && email) {
+						updateAccountIdentity(id, email, name)
 					}
 				}
 			)
@@ -426,7 +436,7 @@ export async function preloadMailView(): Promise<void> {
 	}
 }
 
-export async function handleLoginSuccess(id: string, email: string, url?: string): Promise<void> {
+export async function handleLoginSuccess(id: string, email: string, url?: string, name?: string): Promise<void> {
 	const pending = get(pendingLogin)
 	const accounts = get(mailAccounts)
 	let cleanEmail = email.trim()
@@ -447,7 +457,7 @@ export async function handleLoginSuccess(id: string, email: string, url?: string
 	}
 
 	const provider = pending?.provider || detectProviderFromEmail(cleanEmail) || "custom"
-	const extractedName = extractEmailName(cleanEmail) || PROVIDER_CONFIGS[provider]?.name || "Webmail"
+	const extractedName = (name && name.trim().length > 1) ? name.trim() : (extractEmailName(cleanEmail) || PROVIDER_CONFIGS[provider]?.name || "Webmail")
 	const newAccount: MailAccount = {
 		id,
 		provider,
@@ -463,6 +473,28 @@ export async function handleLoginSuccess(id: string, email: string, url?: string
 	pendingLogin.set(null)
 	activeMailAccount.set(newAccount)
 	showToast(`🎉 ${extractedName} (${cleanEmail}) - ${language.mail?.toastConnectedSuccess || "Connected successfully"}`, "success")
+}
+
+export function updateAccountIdentity(id: string, email: string, name?: string) {
+	mailAccounts.update((accounts) => {
+		const idx = accounts.findIndex((a) => a.id === id)
+		if (idx !== -1) {
+			let changed = false
+			const current = accounts[idx]
+			if (email && email.includes("@") && current.email !== email && (current.email.startsWith("9@") || current.email.startsWith("icloud@") || current.name === "9")) {
+				current.email = email
+				changed = true
+			}
+			if (name && name.trim().length > 1 && (current.name === "9" || current.name === "Webmail" || !current.name || current.name === current.email)) {
+				current.name = name.trim()
+				changed = true
+			}
+			if (changed) {
+				saveMailAccount(current).catch(() => {})
+			}
+		}
+		return accounts
+	})
 }
 
 export async function exitMailViewToDashboard(): Promise<void> {

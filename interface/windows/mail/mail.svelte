@@ -1093,9 +1093,12 @@
 								mailUnreadOnly = false
 							})}
 						>
-							<span class="w-6 h-6 rounded-[7px] flex items-center justify-center flex-shrink-0 shadow-xs bg-[#0078d4] text-white">
-								<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="white">
-									<path d="M23.007 6.467L13.72.062a.853.853 0 00-.916.037L.426 8.358A.853.853 0 000 9.072v11.996c0 .472.383.854.854.854h22.292c.472 0 .854-.382.854-.854V7.27a.853.853 0 00-.993-.803z"/>
+							<span class="w-6 h-6 rounded-[7px] flex items-center justify-center flex-shrink-0 shadow-xs bg-white border border-black/8 dark:border-white/12">
+								<svg class="w-3.5 h-3.5" viewBox="0 0 24 24">
+									<path fill="#F25022" d="M1 1h10v10H1z"/>
+									<path fill="#7FBA00" d="M13 1h10v10H13z"/>
+									<path fill="#00A4EF" d="M1 13h10v10H1z"/>
+									<path fill="#FFB900" d="M13 13h10v10H1z"/>
 								</svg>
 							</span>
 							<span class="whitespace-nowrap tracking-tight font-semibold text-[13px]">Outlook</span>
@@ -1285,11 +1288,14 @@
 										</svg>
 									</div>
 								{:else if acc.provider === "outlook"}
-									<svg class="w-7 h-7" viewBox="0 0 24 24" fill="white">
-										<path d="M23.007 6.467L13.72.062a.853.853 0 00-.916.037L.426 8.358A.853.853 0 000 9.072v11.996c0 .472.383.854.854.854h22.292c.472 0 .854-.382.854-.854V7.27a.853.853 0 00-.993-.803z" fill="#0078d4"/>
-										<path d="M13.714 13.626L24 7.271v13.797a.853.853 0 01-.854.854H13.714V13.626z" fill="#005a9e"/>
-										<path d="M0 9.072l10.286 6.355V21.92H.854A.853.853 0 010 21.068V9.072z" fill="#0078d4"/>
-									</svg>
+									<div class="w-full h-full bg-white flex items-center justify-center">
+										<svg class="w-7 h-7" viewBox="0 0 24 24">
+											<path fill="#F25022" d="M1 1h10v10H1z"/>
+											<path fill="#7FBA00" d="M13 1h10v10H13z"/>
+											<path fill="#00A4EF" d="M1 13h10v10H1z"/>
+											<path fill="#FFB900" d="M13 13h10v10H1z"/>
+										</svg>
+									</div>
 								{:else if acc.provider === "yahoo"}
 									<svg class="w-6 h-6" viewBox="0 0 24 24" fill="white">
 										<path d="M12.983 12.068l4.498-8.918h-2.613l-3.184 6.786-3.21-6.786H5.807l4.524 8.892V19.5h2.652v-7.432zm3.842 4.932c-.754 0-1.365.61-1.365 1.365 0 .754.61 1.365 1.365 1.365.754 0 1.365-.61 1.365-1.365 0-.754-.61-1.365-1.365-1.365z"/>
@@ -1468,11 +1474,14 @@
 						</svg>
 					</div>
 				{:else if activeMailDrag.account.provider === "outlook"}
-					<svg class="w-7 h-7" viewBox="0 0 24 24" fill="white">
-						<path d="M23.007 6.467L13.72.062a.853.853 0 00-.916.037L.426 8.358A.853.853 0 000 9.072v11.996c0 .472.383.854.854.854h22.292c.472 0 .854-.382.854-.854V7.27a.853.853 0 00-.993-.803z" fill="#0078d4"/>
-						<path d="M13.714 13.626L24 7.271v13.797a.853.853 0 01-.854.854H13.714V13.626z" fill="#005a9e"/>
-						<path d="M0 9.072l10.286 6.355V21.92H.854A.853.853 0 010 21.068V9.072z" fill="#0078d4"/>
-					</svg>
+					<div class="w-full h-full bg-white flex items-center justify-center">
+						<svg class="w-7 h-7" viewBox="0 0 24 24">
+							<path fill="#F25022" d="M1 1h10v10H1z"/>
+							<path fill="#7FBA00" d="M13 1h10v10H13z"/>
+							<path fill="#00A4EF" d="M1 13h10v10H1z"/>
+							<path fill="#FFB900" d="M13 13h10v10H1z"/>
+						</svg>
+					</div>
 				{:else}
 					<div class="w-7 h-7 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-bold uppercase">
 						{activeMailDrag.account.name?.[0] || "M"}
@@ -1706,9 +1715,12 @@
 					class="w-full p-3 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 hover:border-blue-500 dark:hover:border-sky-500 bg-slate-50 dark:bg-slate-800/60 hover:bg-white dark:hover:bg-slate-800 transition-all active:scale-[0.98] flex items-center gap-3.5 cursor-pointer text-left"
 					on:click={() => handleStartLoginDirect('outlook')}
 				>
-					<div class="w-10 h-10 rounded-xl bg-[#0078d4] flex items-center justify-center flex-shrink-0 shadow-sm">
-						<svg class="w-5 h-5" viewBox="0 0 24 24" fill="white">
-							<path d="M23.007 6.467L13.72.062a.853.853 0 00-.916.037L.426 8.358A.853.853 0 000 9.072v11.996c0 .472.383.854.854.854h22.292c.472 0 .854-.382.854-.854V7.27a.853.853 0 00-.993-.803z"/>
+					<div class="w-10 h-10 rounded-xl bg-white flex items-center justify-center flex-shrink-0 shadow-sm border border-slate-200/60">
+						<svg class="w-5 h-5" viewBox="0 0 24 24">
+							<path fill="#F25022" d="M1 1h10v10H1z"/>
+							<path fill="#7FBA00" d="M13 1h10v10H13z"/>
+							<path fill="#00A4EF" d="M1 13h10v10H1z"/>
+							<path fill="#FFB900" d="M13 13h10v10H1z"/>
 						</svg>
 					</div>
 					<div>
