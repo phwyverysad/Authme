@@ -80,7 +80,12 @@ pub fn load_window_state(app: &AppHandle) -> Option<WindowState> {
 pub fn save_window_state(app: &AppHandle, state: &WindowState) {
     let path = get_state_file_path(app);
     if let Ok(json) = serde_json::to_string_pretty(state) {
-        let _ = fs::write(path, json);
+        let tmp_path = path.with_extension("tmp");
+        if fs::write(&tmp_path, &json).is_ok() {
+            let _ = fs::rename(&tmp_path, path);
+        } else {
+            let _ = fs::write(path, json);
+        }
     }
 }
 
@@ -102,8 +107,8 @@ pub fn restore_window_state(window: &Window) {
 
         let safe_x = if state.x < -10000 { 100 } else { state.x };
         let safe_y = if state.y < -10000 { 100 } else { state.y };
-        let safe_w = if state.width < 500 { 1280 } else { state.width };
-        let safe_h = if state.height < 400 { 800 } else { state.height };
+        let safe_w = if state.width < 500 || state.width > 10000 { 1280 } else { state.width };
+        let safe_h = if state.height < 400 || state.height > 10000 { 800 } else { state.height };
 
         // Validate coordinates against all connected monitors
         let is_valid_position = if let Ok(monitors) = window.available_monitors() {

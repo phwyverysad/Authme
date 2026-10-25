@@ -66,6 +66,7 @@ import { scheduleClipboardClear } from "../../utils/clipboardGuard"
 
 const CIRCUMFERENCE = 106.81
 let currentCodesData: LibImportFile = { names: [], secrets: [], issuers: [], uniqIds: [] }
+export const getCurrentCodesData = (): LibImportFile => currentCodesData
 let listenersInitialized = false
 let cleanupCodeDrag: () => void = () => {}
 
@@ -901,6 +902,9 @@ export const generateCodeElements = (codes: LibImportFile) => {
 	}
 
 	const moveCardRelative = async (card: HTMLElement, direction: -1 | 1) => {
+		const searchBar = document.querySelector<HTMLInputElement>(".search")
+		if (searchBar && searchBar.value.trim() !== "") return
+
 		const container = getCodesContainer()
 		if (!container) return
 
@@ -1500,10 +1504,16 @@ export const clearSearch = () => {
 	search()
 }
 
+export const escapeRegex = (str: string): string => {
+	return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+}
+
 export const search = () => {
 	const searchBar: HTMLInputElement | null = document.querySelector(".search")
 	const rawInput = searchBar?.value || ""
-	const input = rawInput.trim().toLowerCase()
+	// Bound query length to protect against CPU exhaustion
+	const boundedRaw = rawInput.length > 256 ? rawInput.slice(0, 256) : rawInput
+	const input = boundedRaw.trim().toLowerCase()
 	let currentCat = "all"
 	activeCodeCategory.subscribe((v) => (currentCat = v))()
 
@@ -1551,7 +1561,7 @@ export const search = () => {
 		return
 	}
 
-	const tokens = input ? input.split(/\s+/).filter(Boolean) : []
+	const tokens = input ? input.split(/\s+/).filter(Boolean).slice(0, 20) : []
 	let matchedCount = 0
 
 	for (let i = 0; i < searchQuery.length; i++) {
@@ -1987,16 +1997,7 @@ export const setupCodesEventListeners = () => {
 }
 
 if (typeof window !== "undefined") {
-	;(window as any).__authme_codes = {
-		togglePinCodeAtIndex,
-		editCodeAtIndex,
-		deleteCodeAtIndex,
-		getCodesData: () => currentCodesData,
-		loadCodes,
-		generateCodeElements,
-		search,
-		clearSearch,
-	}
+	// Secure: sensitive raw codes data and functions are not exposed on window
 	setupCodesEventListeners()
 }
 

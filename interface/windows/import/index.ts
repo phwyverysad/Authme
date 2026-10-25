@@ -22,12 +22,19 @@ export const chooseImages = async () => {
 
 	// Read images
 	for (let i = 0; i < filePaths.length; i++) {
-		const file = await fs.readFile(filePaths[i])
+		try {
+			const file = await fs.readFile(filePaths[i])
+			const blob = new Blob([file], { type: "application/octet-binary" })
+			const img = await createImageBitmap(blob)
+			images.push(img)
+		} catch (err) {
+			logger.error(`Error reading image file ${filePaths[i]}: ${err}`)
+		}
+	}
 
-		const blob = new Blob([file], { type: "application/octet-binary" })
-		const img = await createImageBitmap(blob)
-
-		images.push(img)
+	if (images.length === 0) {
+		dialog.message(language.import?.errors?.noQrFound || "No QR code found on the picture.", { kind: "error" })
+		return
 	}
 
 	let importString = ""
@@ -226,36 +233,47 @@ export const chooseFile = async () => {
 	const filePath = await dialog.open({ filters: [{ name: "Authme file", extensions: ["authme"] }] })
 
 	if (filePath !== null) {
-		const loadedFile = await fs.readTextFile(filePath)
-		const file: LibAuthmeFile = JSON.parse(loadedFile)
-		const importString = decodeBase64(file.codes)
+		try {
+			const loadedFile = await fs.readTextFile(filePath)
+			if (!loadedFile || !loadedFile.trim()) {
+				return dialog.message(language.import?.errors?.noEntriesInFile || "Selected file is empty.", { kind: "error" })
+			}
+			const file: LibAuthmeFile = JSON.parse(loadedFile)
+			if (!file || typeof file.codes !== "string") {
+				return dialog.message(language.import?.errors?.decodeFailed || "Failed to parse Authme backup file.", { kind: "error" })
+			}
+			const importString = decodeBase64(file.codes)
 
-		const hasExistingCodes = Boolean(settings.vault?.codes || state.importData)
-		let shouldMerge = false
+			const hasExistingCodes = Boolean(settings.vault?.codes || state.importData)
+			let shouldMerge = false
 
-		if (hasExistingCodes) {
-			shouldMerge = await dialog.ask(
-				language.import?.mergeOrReplacePrompt || "Existing 2FA codes found in your vault.\n\nDo you want to MERGE the imported codes with your existing codes, or REPLACE them completely?",
-				{
-					title: language.import?.importOptionsTitle || "Import .authme file",
-					okLabel: language.import?.mergeButton || "Merge",
-					cancelLabel: language.import?.replaceButton || "Replace",
-					kind: "info",
-				}
-			)
+			if (hasExistingCodes) {
+				shouldMerge = await dialog.ask(
+					language.import?.mergeOrReplacePrompt || "Existing 2FA codes found in your vault.\n\nDo you want to MERGE the imported codes with your existing codes, or REPLACE them completely?",
+					{
+						title: language.import?.importOptionsTitle || "Import .authme file",
+						okLabel: language.import?.mergeButton || "Merge",
+						cancelLabel: language.import?.replaceButton || "Replace",
+						kind: "info",
+					}
+				)
+			}
+
+			if (shouldMerge) {
+				state.importData = (state.importData ? state.importData + "\n" : "") + importString
+			} else {
+				settings.vault.codes = null
+				setSettings(settings)
+				state.importData = importString
+			}
+
+			setState(state)
+			dialog.message(language.codes.dialog.codesImported)
+			navigate("codes")
+		} catch (error) {
+			logger.error(`Error reading .authme file: ${error}`)
+			dialog.message(language.import?.errors?.decodeFailed || "Failed to parse .authme file.", { kind: "error" })
 		}
-
-		if (shouldMerge) {
-			state.importData = (state.importData ? state.importData + "\n" : "") + importString
-		} else {
-			settings.vault.codes = null
-			setSettings(settings)
-			state.importData = importString
-		}
-
-		setState(state)
-		dialog.message(language.codes.dialog.codesImported)
-		navigate("codes")
 	}
 }
 
@@ -278,29 +296,45 @@ export const twoFasAuthFile = async () => {
 	}
 
 	if (filePath !== null) {
-		const loadedFile = await fs.readTextFile(filePath)
-		const file: TwoFasFile = JSON.parse(loadedFile)
-		let importString = ""
+		try {
+			const loadedFile = await fs.readTextFile(filePath)
+			if (!loadedFile || !loadedFile.trim()) {
+				return dialog.message(language.import?.errors?.noEntriesInFile || "Selected file is empty.", { kind: "error" })
+			}
+			const file: TwoFasFile = JSON.parse(loadedFile)
+			if (!file || !Array.isArray(file.services)) {
+				return dialog.message(language.import?.errors?.decodeFailed || "Failed to parse 2FAS file.", { kind: "error" })
+			}
+			let importString = ""
 
-		for (let i = 0; i < (file.services?.length || 0); i++) {
-			const service = file.services[i]
+			for (let i = 0; i < file.services.length; i++) {
+				const service = file.services[i]
 
-			if (service?.otp?.tokenType === "TOTP") {
-				if (service.otp.source === "Link" && service.otp.link !== undefined && service.otp.link.trim()) {
-					importString += totpImageConverter(service.otp.link)
-				} else {
-					importString += totpImageConverter(`otpauth://totp/${service.name}?secret=${service.secret}&issuer=${service.name}`)
+				if (service?.otp?.tokenType === "TOTP") {
+					if (service.otp.source === "Link" && service.otp.link !== undefined && service.otp.link.trim()) {
+						importString += totpImageConverter(service.otp.link)
+					} else if (service.secret) {
+						const cleanName = encodeURIComponent(service.name || "2FA")
+						importString += totpImageConverter(`otpauth://totp/${cleanName}?secret=${encodeURIComponent(service.secret)}&issuer=${cleanName}`)
+					}
 				}
 			}
+
+			if (importString.trim() === "") {
+				return dialog.message(language.import?.errors?.noEntriesInFile || "No entries found in the selected file!", { kind: "error" })
+			}
+
+			dialog.message(language.codes.dialog.codesImported)
+
+			const state = getState()
+			state.importData = (state.importData ? state.importData + "\n" : "") + importString
+			setState(state)
+
+			navigate("codes")
+		} catch (error) {
+			logger.error(`Error reading 2FAS backup file: ${error}`)
+			dialog.message(language.import?.errors?.decodeFailed || "Failed to parse 2FAS file.", { kind: "error" })
 		}
-
-		dialog.message(language.codes.dialog.codesImported)
-
-		const state = getState()
-		state.importData = (state.importData ? state.importData + "\n" : "") + importString
-		setState(state)
-
-		navigate("codes")
 	}
 }
 
@@ -324,25 +358,42 @@ export const aegisFile = async () => {
 	}
 
 	if (filePath !== null) {
-		const loadedFile = await fs.readTextFile(filePath)
-		const file: AegisFile = JSON.parse(loadedFile)
-		let importString = ""
-
-		for (let i = 0; i < (file.db?.entries?.length || 0); i++) {
-			const entry = file.db.entries[i]
-
-			if (entry?.type === "totp" && entry?.info?.secret) {
-				importString += totpImageConverter(`otpauth://totp/${entry.name}?secret=${entry.info.secret}&issuer=${entry.issuer}`)
+		try {
+			const loadedFile = await fs.readTextFile(filePath)
+			if (!loadedFile || !loadedFile.trim()) {
+				return dialog.message(language.import?.errors?.noEntriesInFile || "Selected file is empty.", { kind: "error" })
 			}
+			const file: AegisFile = JSON.parse(loadedFile)
+			if (!file || !file.db || !Array.isArray(file.db.entries)) {
+				return dialog.message(language.import?.errors?.decodeFailed || "Failed to parse Aegis file.", { kind: "error" })
+			}
+			let importString = ""
+
+			for (let i = 0; i < file.db.entries.length; i++) {
+				const entry = file.db.entries[i]
+
+				if (entry?.type === "totp" && entry?.info?.secret) {
+					const cleanName = encodeURIComponent(entry.name || entry.issuer || "2FA")
+					const cleanIssuer = encodeURIComponent(entry.issuer || entry.name || "2FA")
+					importString += totpImageConverter(`otpauth://totp/${cleanName}?secret=${encodeURIComponent(entry.info.secret)}&issuer=${cleanIssuer}`)
+				}
+			}
+
+			if (importString.trim() === "") {
+				return dialog.message(language.import?.errors?.noEntriesInFile || "No entries found in the selected file!", { kind: "error" })
+			}
+
+			dialog.message(language.codes.dialog.codesImported)
+
+			const state = getState()
+			state.importData = (state.importData ? state.importData + "\n" : "") + importString
+			setState(state)
+
+			navigate("codes")
+		} catch (error) {
+			logger.error(`Error reading Aegis backup file: ${error}`)
+			dialog.message(language.import?.errors?.decodeFailed || "Failed to parse Aegis file.", { kind: "error" })
 		}
-
-		dialog.message(language.codes.dialog.codesImported)
-
-		const state = getState()
-		state.importData = (state.importData ? state.importData + "\n" : "") + importString
-		setState(state)
-
-		navigate("codes")
 	}
 }
 
@@ -362,25 +413,40 @@ export const bitwardenFile = async () => {
 	}
 
 	if (filePath !== null) {
-		const loadedFile = await fs.readTextFile(filePath)
-		const file: BitwardenFile = JSON.parse(loadedFile)
-		let importString = ""
-
-		for (let i = 0; i < (file.items?.length || 0); i++) {
-			const entry = file.items[i]
-
-			if (entry?.login?.totp) {
-				importString += totpImageConverter(entry.login.totp)
+		try {
+			const loadedFile = await fs.readTextFile(filePath)
+			if (!loadedFile || !loadedFile.trim()) {
+				return dialog.message(language.import?.errors?.noEntriesInFile || "Selected file is empty.", { kind: "error" })
 			}
+			const file: BitwardenFile = JSON.parse(loadedFile)
+			if (!file || !Array.isArray(file.items)) {
+				return dialog.message(language.import?.errors?.decodeFailed || "Failed to parse Bitwarden file.", { kind: "error" })
+			}
+			let importString = ""
+
+			for (let i = 0; i < file.items.length; i++) {
+				const entry = file.items[i]
+
+				if (entry?.login?.totp) {
+					importString += totpImageConverter(entry.login.totp)
+				}
+			}
+
+			if (importString.trim() === "") {
+				return dialog.message(language.import?.errors?.noEntriesInFile || "No entries found in the selected file!", { kind: "error" })
+			}
+
+			dialog.message(language.codes.dialog.codesImported)
+
+			const state = getState()
+			state.importData = (state.importData ? state.importData + "\n" : "") + importString
+			setState(state)
+
+			navigate("codes")
+		} catch (error) {
+			logger.error(`Error reading Bitwarden export file: ${error}`)
+			dialog.message(language.import?.errors?.decodeFailed || "Failed to parse Bitwarden file.", { kind: "error" })
 		}
-
-		dialog.message(language.codes.dialog.codesImported)
-
-		const state = getState()
-		state.importData = (state.importData ? state.importData + "\n" : "") + importString
-		setState(state)
-
-		navigate("codes")
 	}
 }
 
@@ -400,29 +466,41 @@ export const protonFile = async () => {
 	}
 
 	if (filePath !== null) {
-		const loadedFile = await fs.readTextFile(filePath)
-		const file: ProtonFile = JSON.parse(loadedFile)
-		let importString = ""
-
-		if (!file.entries) {
-			return dialog.message(language.import?.errors?.noEntriesInFile || "No entries found in the selected file!", { kind: "error" })
-		}
-
-		for (let i = 0; i < file.entries.length; i++) {
-			const entry = file.entries[i]
-
-			if (entry?.content?.uri?.startsWith("otpauth://totp/")) {
-				importString += totpImageConverter(entry.content.uri)
+		try {
+			const loadedFile = await fs.readTextFile(filePath)
+			if (!loadedFile || !loadedFile.trim()) {
+				return dialog.message(language.import?.errors?.noEntriesInFile || "Selected file is empty.", { kind: "error" })
 			}
+			const file: ProtonFile = JSON.parse(loadedFile)
+			let importString = ""
+
+			if (!file || !Array.isArray(file.entries)) {
+				return dialog.message(language.import?.errors?.noEntriesInFile || "No entries found in the selected file!", { kind: "error" })
+			}
+
+			for (let i = 0; i < file.entries.length; i++) {
+				const entry = file.entries[i]
+
+				if (entry?.content?.uri?.startsWith("otpauth://totp/")) {
+					importString += totpImageConverter(entry.content.uri)
+				}
+			}
+
+			if (importString.trim() === "") {
+				return dialog.message(language.import?.errors?.noEntriesInFile || "No entries found in the selected file!", { kind: "error" })
+			}
+
+			dialog.message(language.codes.dialog.codesImported)
+
+			const state = getState()
+			state.importData = (state.importData ? state.importData + "\n" : "") + importString
+			setState(state)
+
+			navigate("codes")
+		} catch (error) {
+			logger.error(`Error reading Proton export file: ${error}`)
+			dialog.message(language.import?.errors?.decodeFailed || "Failed to parse Proton Authenticator export file.", { kind: "error" })
 		}
-
-		dialog.message(language.codes.dialog.codesImported)
-
-		const state = getState()
-		state.importData = (state.importData ? state.importData + "\n" : "") + importString
-		setState(state)
-
-		navigate("codes")
 	}
 }
 
@@ -433,65 +511,129 @@ export const authenticatorcc = async () => {
 	const filePath = await dialog.open({ filters: [{ name: "Authenticator.cc export file", extensions: ["txt"] }] })
 
 	if (filePath !== null) {
-		const loadedFile = await fs.readTextFile(filePath)
-		let importString = ""
-
-		const lines = loadedFile.split(/\r?\n/)
-		for (let i = 0; i < lines.length; i++) {
-			const line = lines[i].trim()
-
-			if (line.startsWith("otpauth://totp/")) {
-				importString += totpImageConverter(line)
+		try {
+			const loadedFile = await fs.readTextFile(filePath)
+			if (!loadedFile || !loadedFile.trim()) {
+				return dialog.message(language.import?.errors?.noEntriesInFile || "Selected file is empty.", { kind: "error" })
 			}
+			let importString = ""
+
+			const lines = loadedFile.split(/\r?\n/)
+			for (let i = 0; i < lines.length; i++) {
+				const line = lines[i].trim()
+
+				if (line.startsWith("otpauth://totp/")) {
+					importString += totpImageConverter(line)
+				}
+			}
+
+			if (importString.trim() === "") {
+				return dialog.message(language.import?.errors?.noEntriesInFile || "No valid TOTP entries found in the file.", { kind: "error" })
+			}
+
+			dialog.message(language.codes.dialog.codesImported)
+
+			const state = getState()
+			state.importData = (state.importData ? state.importData + "\n" : "") + importString
+			setState(state)
+
+			navigate("codes")
+		} catch (error) {
+			logger.error(`Error reading Authenticator.cc file: ${error}`)
+			dialog.message(language.import?.errors?.decodeFailed || "Failed to parse Authenticator.cc file.", { kind: "error" })
 		}
-
-		dialog.message(language.codes.dialog.codesImported)
-
-		const state = getState()
-		state.importData = (state.importData ? state.importData + "\n" : "") + importString
-		setState(state)
-
-		navigate("codes")
 	}
 }
 
 /**
- * Start a video capture, when a QR code detected try to read it
+ * Setup and monitor a video stream dialog for QR code detection.
+ * Automatically handles media track cleanup, timer clearing, and event listener removal
+ * on stop button click, dialog cancel (Esc key), dialog close, or error.
  */
-export const captureScreen = async () => {
-	const dialogElement: LibDialogElement = document.querySelector(".dialog1")
-	const videoElement: HTMLVideoElement = document.querySelector(".video")
-	let interval: NodeJS.Timeout
+const runMediaStreamQrScanner = async (
+	stream: MediaStream,
+	dialogTitle: string,
+	detectSourceLog: string
+) => {
+	const dialogElement: LibDialogElement | null = document.querySelector(".dialog1")
+	const videoElement: HTMLVideoElement | null = document.querySelector(".video")
+	const stopButton: HTMLElement | null = document.querySelector(".stopVideo")
+
+	if (!dialogElement || !videoElement) {
+		stream.getTracks().forEach((t) => {
+			try {
+				t.stop()
+			} catch (e) {}
+		})
+		return
+	}
 
 	const titleEl = document.querySelector(".dialog1Title")
-	if (titleEl) titleEl.textContent = language.import?.screenCapture || "Screen capture"
+	if (titleEl) titleEl.textContent = dialogTitle
 
-	try {
-		videoElement.srcObject = await navigator.mediaDevices.getDisplayMedia({ audio: false })
-		const track = videoElement.srcObject.getTracks()[0]
+	let interval: NodeJS.Timeout | null = null
+	let isCleanedUp = false
 
-		dialogElement.showModal()
+	const cleanup = () => {
+		if (isCleanedUp) return
+		isCleanedUp = true
 
-		document.querySelector(".stopVideo").addEventListener("click", () => {
+		if (interval) {
 			clearInterval(interval)
-			track.stop()
+			interval = null
+		}
 
-			dialogElement.close()
+		stream.getTracks().forEach((track) => {
+			try {
+				track.stop()
+			} catch (e) {}
 		})
 
-		const detect = async () => {
-			logger.log("Checking for QR code on screen...")
+		try {
+			videoElement.srcObject = null
+		} catch (e) {}
 
+		stopButton?.removeEventListener("click", onStopClick)
+		dialogElement.removeEventListener("close", onDialogClose)
+		dialogElement.removeEventListener("cancel", onDialogCancel)
+
+		if (dialogElement.open) {
+			dialogElement.close()
+		}
+	}
+
+	const onStopClick = () => {
+		cleanup()
+	}
+
+	const onDialogClose = () => {
+		cleanup()
+	}
+
+	const onDialogCancel = () => {
+		cleanup()
+	}
+
+	stopButton?.addEventListener("click", onStopClick)
+	dialogElement.addEventListener("close", onDialogClose)
+	dialogElement.addEventListener("cancel", onDialogCancel)
+
+	videoElement.srcObject = stream
+	dialogElement.showModal()
+
+	const detect = async () => {
+		if (isCleanedUp) return
+		logger.log(detectSourceLog)
+
+		try {
 			const detector = new BarcodeDetectorPolyfill()
 			const results = await detector.detect(videoElement)
 
-			// Check if a QR code was found
-			if (results.length === 0) {
+			if (!results || results.length === 0) {
 				return
 			}
 
 			const res = results[0]
-
 			let importString = ""
 
 			if (res.rawValue.startsWith("otpauth://totp/") || res.rawValue.startsWith("otpauth-migration://")) {
@@ -499,8 +641,8 @@ export const captureScreen = async () => {
 					importString += totpImageConverter(res.rawValue)
 				} else {
 					const converted = await migrationImageConverter(res.rawValue)
-
 					if (converted === "") {
+						cleanup()
 						return dialog.message(language.import?.errors?.decodeFailed || "Failed to decode QR code(s).", { kind: "error" })
 					} else {
 						importString += converted
@@ -508,34 +650,39 @@ export const captureScreen = async () => {
 				}
 
 				const state = getState()
-				state.importData = importString
+				state.importData = (state.importData ? state.importData + "\n" : "") + importString
 				setState(state)
 
-				clearInterval(interval)
-				track.stop()
-
+				cleanup()
 				dialog.message(language.codes.dialog.codesImported)
-
 				navigate("codes")
 			} else {
-				// Wrong QR code found
-				logger.error(`Wrong type of QR code found during screen capture: ${JSON.stringify(res)}`)
+				logger.error(`Wrong type of QR code found: ${JSON.stringify(res)}`)
+				cleanup()
 				dialog.message(language.import?.errors?.wrongQr || "Wrong type of QR code found.", { kind: "error" })
-
-				clearInterval(interval)
-				track.stop()
-
-				dialogElement.close()
 			}
+		} catch (err) {
+			logger.error(`Error during QR detection: ${err}`)
 		}
+	}
 
-		// Check for QR code every second
-		interval = setInterval(detect, 1000)
+	interval = setInterval(detect, 1000)
+}
+
+/**
+ * Start a video capture, when a QR code detected try to read it
+ */
+export const captureScreen = async () => {
+	try {
+		const stream = await navigator.mediaDevices.getDisplayMedia({ audio: false })
+		await runMediaStreamQrScanner(
+			stream,
+			language.import?.screenCapture || "Screen capture",
+			"Checking for QR code on screen..."
+		)
 	} catch (err) {
 		logger.error(`Error during screen capture: ${err}`)
 		dialog.message(`${language.common?.error || "Error"}: \n\n${err}`, { kind: "error" })
-
-		dialogElement.close()
 	}
 }
 
@@ -572,80 +719,16 @@ export const useWebcam = async () => {
 		// Not found webcam
 		dialog.message(language.import?.errors?.webcamNotFound || "Webcam not found!", { kind: "error" })
 	} else {
-		const dialogElement: LibDialogElement = document.querySelector(".dialog1")
-		const videoElement: HTMLVideoElement = document.querySelector(".video")
-		let interval: NodeJS.Timeout
-
 		try {
-			videoElement.srcObject = await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: "environment" } })
-			const track = videoElement.srcObject.getTracks()[0]
-
-			dialogElement.showModal()
-
-			document.querySelector(".stopVideo").addEventListener("click", () => {
-				clearInterval(interval)
-				track.stop()
-
-				dialogElement.close()
-			})
-
-			const detect = async () => {
-				logger.log("Checking for QR code with webcam...")
-
-				const detector = new BarcodeDetectorPolyfill()
-				const results = await detector.detect(videoElement)
-
-				// Check if a QR code was found
-				if (results.length === 0) {
-					return
-				}
-
-				const res = results[0]
-
-				let importString = ""
-
-				if (res.rawValue.startsWith("otpauth://totp/") || res.rawValue.startsWith("otpauth-migration://")) {
-					if (res.rawValue.startsWith("otpauth://totp/")) {
-						importString += totpImageConverter(res.rawValue)
-					} else {
-						const converted = await migrationImageConverter(res.rawValue)
-
-						if (converted === "") {
-							return dialog.message(language.import?.errors?.decodeFailed || "Failed to decode QR code(s).", { kind: "error" })
-						} else {
-							importString += converted
-						}
-					}
-
-					const state = getState()
-					state.importData = importString
-					setState(state)
-
-					clearInterval(interval)
-					track.stop()
-
-					dialog.message(language.codes.dialog.codesImported)
-
-					navigate("codes")
-				} else {
-					// Wrong QR code found
-					dialog.message(language.import?.errors?.wrongQr || "Wrong type of QR code found.", { kind: "error" })
-					logger.error(`Wrong type of QR code found during webcam import: ${JSON.stringify(res)}`)
-
-					clearInterval(interval)
-					track.stop()
-
-					dialogElement.close()
-				}
-			}
-
-			// Check for QR code every second
-			interval = setInterval(detect, 1000)
+			const stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: "environment" } })
+			await runMediaStreamQrScanner(
+				stream,
+				language.import?.webcam || "Webcam",
+				"Checking for QR code with webcam..."
+			)
 		} catch (err) {
 			logger.error(`Error occurred while using the webcam: ${err}`)
 			dialog.message(`${language.common?.error || "Error"}: \n\n${err}`, { kind: "error" })
-
-			dialogElement.close()
 		}
 	}
 }

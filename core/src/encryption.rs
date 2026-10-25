@@ -72,7 +72,12 @@ pub fn save_fallback_key(key: &str) {
         return;
     }
     for path in get_fallback_key_paths() {
-        let _ = fs::write(path, trimmed);
+        let _ = fs::write(&path, trimmed);
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let _ = fs::set_permissions(&path, fs::Permissions::from_mode(0o600));
+        }
     }
 }
 
@@ -190,7 +195,8 @@ pub fn encrypt_data(data: String) -> String {
 
 #[tauri::command]
 pub fn decrypt_data(data: String) -> String {
-    if data.trim().is_empty() {
+    let clean_data = data.trim();
+    if clean_data.is_empty() {
         return "".into();
     }
 
@@ -200,7 +206,7 @@ pub fn decrypt_data(data: String) -> String {
     // This avoids blocking calls to the Windows Credential Manager / OS keyring on every decrypt.
     if !active_key.is_empty() && active_key != "error" {
         let mc = new_magic_crypt!(&active_key, 256);
-        if let Ok(decrypted_string) = mc.decrypt_base64_to_string(&data) {
+        if let Ok(decrypted_string) = mc.decrypt_base64_to_string(clean_data) {
             return decrypted_string;
         }
     }
@@ -237,7 +243,7 @@ pub fn decrypt_data(data: String) -> String {
     // Attempt decryption with candidate keys
     for key in &candidate_keys {
         let mc = new_magic_crypt!(key, 256);
-        if let Ok(decrypted_string) = mc.decrypt_base64_to_string(&data) {
+        if let Ok(decrypted_string) = mc.decrypt_base64_to_string(clean_data) {
             set_active_key(key.clone());
             if !key.is_empty() {
                 sync_keyring_key(key);
@@ -251,6 +257,9 @@ pub fn decrypt_data(data: String) -> String {
 
 #[tauri::command]
 pub fn set_entry(name: String, data: String, service: String) -> String {
+    if name.len() > 128 || service.len() > 128 {
+        return "error".into();
+    }
     let s1 = set_keyring_key_with_name(&service, &name, &data);
     if service == "authme" {
         let _ = set_keyring_key_with_name("authme_dev", &name, &data);
@@ -273,10 +282,20 @@ pub fn set_entry(name: String, data: String, service: String) -> String {
 
 #[tauri::command]
 pub fn get_entry(name: String, service: String) -> String {
-    if let Some(k) = get_keyring_key_with_name(&service, &name)
-        .or_else(|| get_keyring_key_with_name("authme", &name))
-        .or_else(|| get_keyring_key_with_name("authme_dev", &name))
-        .or_else(get_fallback_key)
+    if name.len() > 128 || service.len() > 128 {
+        return "error".into();
+    }
+    let key_name = if name.trim().is_empty() { "encryptionKey" } else { &name };
+    if let Some(k) = get_keyring_key_with_name(&service, key_name)
+        .or_else(|| get_keyring_key_with_name("authme", key_name))
+        .or_else(|| get_keyring_key_with_name("authme_dev", key_name))
+        .or_else(|| {
+            if key_name == "encryptionKey" {
+                get_fallback_key()
+            } else {
+                None
+            }
+        })
     {
         return k;
     }
@@ -285,6 +304,9 @@ pub fn get_entry(name: String, service: String) -> String {
 
 #[tauri::command]
 pub fn delete_entry(name: String, service: String) {
+    if name.len() > 128 || service.len() > 128 {
+        return;
+    }
     let key_name = if name.trim().is_empty() { "encryptionKey" } else { &name };
     if let Ok(entry) = keyring::Entry::new(&service, key_name) {
         let _ = entry.delete_credential();
@@ -368,7 +390,7 @@ pub mod tests {
 
     #[test]
     fn test_clear_encryption_key() {
-        let _guard = TEST_MUTEX.lock().unwrap();
+        let _guard = TEST_MUTEX.lock().unwrap_or_else(|e| e.into_inner());
         set_active_key("active_secret_key".to_string());
         assert_eq!(get_active_key(), "active_secret_key");
         clear_encryption_key();
@@ -377,7 +399,7 @@ pub mod tests {
 
     #[test]
     fn test_encryption_fast_path_and_key_setup() {
-        let _guard = TEST_MUTEX.lock().unwrap();
+        let _guard = TEST_MUTEX.lock().unwrap_or_else(|e| e.into_inner());
 
         let test_key = "test_secure_key_1234567890123456";
         set_active_key(test_key.to_string());
@@ -397,7 +419,7 @@ pub mod tests {
 
     #[test]
     fn test_set_entry_updates_active_key_and_fallback() {
-        let _guard = TEST_MUTEX.lock().unwrap();
+        let _guard = TEST_MUTEX.lock().unwrap_or_else(|e| e.into_inner());
         clear_encryption_key();
 
         let new_test_key = "brand_new_key_from_frontend_32";
@@ -426,8 +448,21 @@ pub mod tests {
     }
 
     #[test]
+    fn test_get_entry_nonexistent_does_not_leak_master_key() {
+        let _guard = TEST_MUTEX.lock().unwrap_or_else(|e| e.into_inner());
+        save_fallback_key("super_secret_master_vault_key");
+
+        // Non-existent credentials should return "error", NEVER the fallback master key
+        let res = get_entry("arbitrary_unknown_password_field_xyz123".to_string(), "authme_test_unique_svc".to_string());
+        assert_eq!(res, "error");
+
+        delete_fallback_key();
+        clear_encryption_key();
+    }
+
+    #[test]
     fn test_prime_existing_key_does_not_generate_unrequested_key() {
-        let _guard = TEST_MUTEX.lock().unwrap();
+        let _guard = TEST_MUTEX.lock().unwrap_or_else(|e| e.into_inner());
         clear_encryption_key();
         delete_entry("encryptionKey".to_string(), "authme".to_string());
 

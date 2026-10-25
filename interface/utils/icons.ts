@@ -468,6 +468,140 @@ const stringHash = (str: string): number => {
 	return hash
 }
 
+export function escapeHtml(text: string | null | undefined): string {
+	if (text == null) return ""
+	return String(text)
+		.replace(/&/g, "&amp;")
+		.replace(/</g, "&lt;")
+		.replace(/>/g, "&gt;")
+		.replace(/"/g, "&quot;")
+		.replace(/'/g, "&#039;")
+}
+
+const DANGEROUS_SVG_TAGS = [
+	"script",
+	"foreignobject",
+	"iframe",
+	"object",
+	"embed",
+	"applet",
+	"meta",
+	"link",
+	"base",
+	"style",
+	"audio",
+	"video",
+	"animate",
+	"set",
+	"animatetransform",
+	"animatemotion",
+	"frame",
+	"frameset",
+]
+
+/**
+ * Sanitize an SVG string to prevent Stored XSS / code execution in Tauri WebView.
+ * Strips script tags, foreignObject, iframe, embed, object, animations, inline event handlers (on*),
+ * and dangerous protocols (javascript:, vbscript:, data:).
+ */
+export const sanitizeSvg = (rawSvg: string): string => {
+	if (!rawSvg || typeof rawSvg !== "string") return ""
+	let clean = rawSvg.trim()
+
+	// Must contain <svg and closing </svg>
+	if (!clean.toLowerCase().includes("<svg") || !clean.toLowerCase().includes("</svg>")) {
+		return ""
+	}
+
+	// 1. Remove XML declaration, DOCTYPE, and comments
+	clean = clean.replace(/<\?xml[\s\S]*?\?>/gi, "")
+	clean = clean.replace(/<!DOCTYPE[\s\S]*?>/gi, "")
+	clean = clean.replace(/<!--[\s\S]*?-->/g, "")
+
+	// 2. Remove dangerous tags and their content
+	for (const tag of DANGEROUS_SVG_TAGS) {
+		const pairRegex = new RegExp(`<${tag}\\b[\\s\\S]*?<\\/${tag}>`, "gi")
+		const selfClosingRegex = new RegExp(`<${tag}\\b[\\s\\S]*?\\/?>`, "gi")
+		clean = clean.replace(pairRegex, "")
+		clean = clean.replace(selfClosingRegex, "")
+	}
+
+	// 3. Remove inline event handlers (e.g. onload, onerror, onclick, onbegin, etc.)
+	clean = clean.replace(/\s+on[a-z0-9_-]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, "")
+
+	// 4. Neutralize dangerous URL schemes in attributes (href, xlink:href, src, action, formaction)
+	clean = clean.replace(/\s+(?:href|xlink:href|src|action|formaction)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi, (fullMatch, q1, q2, q3) => {
+		const val = (q1 || q2 || q3 || "").trim().toLowerCase()
+		const decoded = val
+			.replace(/&#x([0-9a-f]+);?/gi, (_, hex) => String.fromCharCode(parseInt(hex, 16)))
+			.replace(/&#([0-9]+);?/gi, (_, dec) => String.fromCharCode(parseInt(dec, 10)))
+			.replace(/[\s\0]/g, "")
+		if (/^(javascript|vbscript|data):/i.test(decoded)) {
+			return ""
+		}
+		return fullMatch
+	})
+
+	// 5. Restrict <use> tags to internal fragments only (#icon-name)
+	clean = clean.replace(/<use\b[\s\S]*?(?:\/>|<\/use>)/gi, (match) => {
+		if (/\b(?:href|xlink:href)\s*=\s*["']?\s*(?:https?:|\/\/|data:|javascript:)/i.test(match)) {
+			return ""
+		}
+		return match
+	})
+
+	// 6. Secondary DOMParser pass if DOM is available (Browser / Tauri WebView)
+	if (typeof DOMParser !== "undefined") {
+		try {
+			const parser = new DOMParser()
+			const doc = parser.parseFromString(clean, "image/svg+xml")
+			if (doc.querySelector("parsererror")) {
+				return ""
+			}
+			const root = doc.documentElement
+			if (!root || root.tagName.toLowerCase() !== "svg") {
+				return ""
+			}
+
+			const dangerousTagSet = new Set(DANGEROUS_SVG_TAGS)
+			const allElements = doc.querySelectorAll("*")
+			for (const el of Array.from(allElements)) {
+				const tag = el.tagName.toLowerCase()
+				if (dangerousTagSet.has(tag)) {
+					el.remove()
+					continue
+				}
+				for (const attr of Array.from(el.attributes)) {
+					const attrName = attr.name.toLowerCase()
+					if (attrName.startsWith("on")) {
+						el.removeAttribute(attr.name)
+					} else if (attrName === "href" || attrName === "xlink:href" || attrName === "src") {
+						const val = attr.value.trim().toLowerCase().replace(/[\s\0]/g, "")
+						if (val.startsWith("javascript:") || val.startsWith("vbscript:") || val.startsWith("data:")) {
+							el.removeAttribute(attr.name)
+						}
+					}
+				}
+			}
+
+			if (typeof XMLSerializer !== "undefined") {
+				clean = new XMLSerializer().serializeToString(doc.documentElement)
+			}
+		} catch (e) {
+			return ""
+		}
+	}
+
+	clean = clean.trim()
+	const startIdx = clean.indexOf("<svg")
+	const endIdx = clean.lastIndexOf("</svg>")
+	if (startIdx === -1 || endIdx === -1 || endIdx < startIdx) {
+		return ""
+	}
+
+	return clean.substring(startIdx, endIdx + 6)
+}
+
 // In-memory and LocalStorage persistent cache for dynamically discovered brand icons from Simple Icons CDN
 const ICON_CACHE_KEY = "authme_dynamic_icon_cache_v2"
 let dynamicIconCache: Record<string, string> = {}
@@ -521,9 +655,12 @@ export const fetchBrandIcon = async (serviceName: string): Promise<string | null
 		if (res.ok) {
 			const text = await res.text()
 			if (text && text.includes("<svg")) {
-				setCachedIcon(clean, text)
-				window.dispatchEvent(new CustomEvent("authme:iconloaded", { detail: { slug: clean, svg: text } }))
-				return text
+				const sanitized = sanitizeSvg(text)
+				if (sanitized) {
+					setCachedIcon(clean, sanitized)
+					window.dispatchEvent(new CustomEvent("authme:iconloaded", { detail: { slug: clean, svg: sanitized } }))
+					return sanitized
+				}
 			}
 		}
 	} catch (e) {}
@@ -598,23 +735,28 @@ export const getServiceIcon = (
 	const cached = getCachedIcon(cat.id)
 	if (cached) {
 		if (cached.startsWith("<svg") || cached.includes("<svg")) {
-			let normalizedSvg = cached
-			if (!normalizedSvg.includes("width=")) {
-				normalizedSvg = normalizedSvg.replace(/<svg\b/i, '<svg width="28" height="28"')
+			const sanitized = sanitizeSvg(cached)
+			if (!sanitized) {
+				delete dynamicIconCache[cat.id]
+			} else {
+				let normalizedSvg = sanitized
+				if (!normalizedSvg.includes("width=")) {
+					normalizedSvg = normalizedSvg.replace(/<svg\b/i, '<svg width="28" height="28"')
+				}
+				const dynamicBg = isDark
+					? "background: #1e293b; border: 1px solid rgba(255,255,255,0.12); box-shadow: 0 4px 12px rgba(0,0,0,0.3);"
+					: "background: #ffffff; border: 1px solid rgba(0,0,0,0.08); box-shadow: 0 1px 3px rgba(0,0,0,0.05);"
+				return {
+					svg: normalizedSvg,
+					bg: dynamicBg,
+					isMonogram: false,
+					serviceKey: cat.id,
+					isDark,
+				}
 			}
-			const dynamicBg = isDark
-				? "background: #1e293b; border: 1px solid rgba(255,255,255,0.12); box-shadow: 0 4px 12px rgba(0,0,0,0.3);"
-				: "background: #ffffff; border: 1px solid rgba(0,0,0,0.08); box-shadow: 0 1px 3px rgba(0,0,0,0.05);"
-			return {
-				svg: normalizedSvg,
-				bg: dynamicBg,
-				isMonogram: false,
-				serviceKey: cat.id,
-				isDark,
-			}
-		} else {
+		} else if (cached.startsWith("https://") || cached.startsWith("http://")) {
 			// Favicon image url
-			const imgSvg = `<img src="${cached}" alt="${cat.name}" class="w-7 h-7 object-contain rounded-md" />`
+			const imgSvg = `<img src="${escapeHtml(cached)}" alt="${escapeHtml(cat.name)}" class="w-7 h-7 object-contain rounded-md" />`
 			const dynamicBg = isDark
 				? "background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); backdrop-filter: blur(8px);"
 				: "background: #ffffff; border: 1px solid rgba(0,0,0,0.08); box-shadow: 0 1px 3px rgba(0,0,0,0.05);"
@@ -633,7 +775,7 @@ export const getServiceIcon = (
 	const initial = (displayLabel.charAt(0) || "A").toUpperCase()
 	const hash = stringHash(displayLabel)
 	const bg = GRADIENT_PALETTES[hash % GRADIENT_PALETTES.length] + " border: 1px solid rgba(255,255,255,0.15);"
-	const monogramSvg = `<span class="text-2xl font-bold text-white tracking-wider select-none font-sans drop-shadow">${initial}</span>`
+	const monogramSvg = `<span class="text-2xl font-bold text-white tracking-wider select-none font-sans drop-shadow">${escapeHtml(initial)}</span>`
 
 	return {
 		svg: monogramSvg,

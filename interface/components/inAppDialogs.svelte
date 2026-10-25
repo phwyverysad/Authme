@@ -12,17 +12,7 @@
 	import ContextMenu from "./contextMenu.svelte"
 	import { fade, scale, fly } from "svelte/transition"
 
-	if (typeof window !== "undefined") {
-		;(window as any).__authme_dialogs = {
-			activeContextMenu,
-			activeEditModal,
-			activeQrModal,
-			activePasswordModal,
-			activeDisablePasswordModal,
-			activeEnablePasswordModal,
-			activeResetModal,
-		}
-	}
+	// Secure: Dialog stores remain private and are not exposed on global window
 	import { getSettings, setSettings } from "../stores/settings"
 	import { navigate } from "../utils/navigate"
 	import { decodeBase64, encodeBase64, encodeBytesToBase64 } from "../utils/convert"
@@ -45,7 +35,7 @@
 	import { getLanguage, currentLanguage } from "@utils/language"
 	import { getServiceIcon, fetchBrandIcon, cleanAccountName } from "../utils/icons"
 	import { TOTP } from "otpauth"
-	import { invalidateVaultCache } from "../windows/codes/index"
+	import { invalidateVaultCache, editCodeAtIndex } from "../windows/codes/index"
 	import { loadMailAccounts, mailViewActive, setMailViewVisible } from "../stores/mail"
 	import { router } from "@baileyherbert/tinro"
 
@@ -214,15 +204,7 @@
 		isSavingEdit = true
 		editError = ""
 		try {
-			if (typeof (window as any).__authme_codes?.editCodeAtIndex === "function") {
-				await (window as any).__authme_codes.editCodeAtIndex(idx, newIssuer, newName, newSecret)
-			} else {
-				window.dispatchEvent(
-					new CustomEvent("authme:edit-code-save", {
-						detail: { index: idx, issuer: newIssuer, name: newName, secret: newSecret },
-					})
-				)
-			}
+			await editCodeAtIndex(idx, newIssuer, newName, newSecret)
 			activeEditModal.set(null)
 		} catch (err) {
 			console.error("Save edit error:", err)

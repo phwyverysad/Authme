@@ -17,9 +17,10 @@ pub fn get_args() -> Vec<String> {
 
 #[tauri::command]
 pub fn random_values(length: usize) -> String {
+    let safe_len = length.min(4096);
     let rand_string: String = thread_rng()
         .sample_iter(&Alphanumeric)
-        .take(length)
+        .take(safe_len)
         .map(char::from)
         .collect();
 
@@ -48,14 +49,47 @@ pub fn logger(message: String, time: String, kind: &str) {
     }
 }
 
+pub fn is_safe_log_path(p_str: &str, is_file: bool) -> bool {
+    let p = std::path::Path::new(p_str);
+    // Reject path traversal
+    if p.components().any(|c| matches!(c, std::path::Component::ParentDir)) {
+        return false;
+    }
+    // Reject UNC paths
+    if p_str.starts_with(r"\\") || p_str.starts_with("//") {
+        return false;
+    }
+    // Reject alternate data streams (more than one colon or colon not at index 1 on Windows)
+    let colon_count = p_str.matches(':').count();
+    if colon_count > 1 || (colon_count == 1 && (!cfg!(windows) || p_str.chars().nth(1) != Some(':'))) {
+        return false;
+    }
+    // Must be inside the application's designated cache or data directory
+    if !p_str.contains("com.levminer.authme") {
+        return false;
+    }
+    if is_file && !p_str.ends_with(".log") {
+        return false;
+    }
+    true
+}
+
 #[tauri::command]
 pub fn create_logs_dir(path: String) {
-    let _ = fs::create_dir_all(path);
+    if !is_safe_log_path(&path, false) {
+        return;
+    }
+    let p = std::path::Path::new(&path);
+    let _ = fs::create_dir_all(p);
 }
 
 #[tauri::command]
 pub fn write_logs(name: String, message: String) {
-    if let Some(parent) = std::path::Path::new(&name).parent() {
+    if !is_safe_log_path(&name, true) || message.len() > 100_000 {
+        return;
+    }
+    let p = std::path::Path::new(&name);
+    if let Some(parent) = p.parent() {
         let _ = fs::create_dir_all(parent);
     }
 
@@ -63,7 +97,7 @@ pub fn write_logs(name: String, message: String) {
         .write(true)
         .append(true)
         .create(true)
-        .open(&name)
+        .open(p)
     {
         let _ = write!(file, "{}", message);
     }
@@ -130,15 +164,11 @@ pub fn try_call_dll_converter(secret: &str) -> Option<Vec<Account>> {
     use std::os::raw::c_char;
 
     // Search order: adjacent to current exe, current working directory, or target dir
+    // Search strictly within trusted application executable directory or its resources subfolder
     let exe_dir = std::env::current_exe().ok().and_then(|p| p.parent().map(|d| d.to_path_buf()));
     let search_dirs = [
         exe_dir.clone(),
         exe_dir.as_ref().map(|d| d.join("resources")),
-        std::env::current_dir().ok(),
-        std::env::current_dir().ok().map(|d| d.join("resources")),
-        std::env::current_dir().ok().map(|d| d.join("dist-exe")),
-        std::env::current_dir().ok().map(|d| d.join("core").join("resources")),
-        std::env::current_dir().ok().map(|d| d.join("core").join("target").join("release")),
     ];
 
     let dll_names = ["authme_extensions.dll", "google_authenticator_converter.dll"];
@@ -217,3 +247,35 @@ pub fn get_dll_extension_info() -> serde_json::Value {
     })
 }
 
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_is_safe_log_path_valid() {
+        assert!(is_safe_log_path("C:\\Users\\Admin\\AppData\\Local\\com.levminer.authme\\logs", false));
+        assert!(is_safe_log_path("C:\\Users\\Admin\\AppData\\Local\\com.levminer.authme\\logs\\authme-2026.log", true));
+        assert!(is_safe_log_path("/home/user/.cache/com.levminer.authme/authme.log", true));
+    }
+
+    #[test]
+    fn test_is_safe_log_path_rejects_traversal() {
+        assert!(!is_safe_log_path("C:\\com.levminer.authme\\..\\Windows\\System32\\evil.log", true));
+        assert!(!is_safe_log_path("/cache/com.levminer.authme/../../../etc/passwd", false));
+    }
+
+    #[test]
+    fn test_is_safe_log_path_rejects_unc_and_alternate_streams() {
+        assert!(!is_safe_log_path(r"\\attacker\share\com.levminer.authme\test.log", true));
+        assert!(!is_safe_log_path("//attacker/share/com.levminer.authme/test.log", true));
+        assert!(!is_safe_log_path("C:\\com.levminer.authme\\test.log:hidden_stream", true));
+    }
+
+    #[test]
+    fn test_is_safe_log_path_rejects_non_authme_and_wrong_extension() {
+        assert!(!is_safe_log_path("C:\\Windows\\System32\\cmd.exe", false));
+        assert!(!is_safe_log_path("C:\\com.levminer.authme\\script.bat", true));
+        assert!(!is_safe_log_path("C:\\Windows\\System32\\logs\\test.log", true));
+    }
+}

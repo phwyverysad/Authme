@@ -16,20 +16,37 @@ export const CLEAR_CLIPBOARD_SECONDS = [0, 10, 20, 30, 60]
 let clearTimer: NodeJS.Timeout | null = null
 let lastCopiedToken: string | null = null
 
+export const getLastCopiedToken = (): string | null => lastCopiedToken
+
+export const setLastCopiedToken = (token: string | null) => {
+	lastCopiedToken = token
+}
+
+export const getClearTimer = (): NodeJS.Timeout | null => clearTimer
+
+export const cancelClipboardClear = () => {
+	if (clearTimer) {
+		clearTimeout(clearTimer)
+		clearTimer = null
+	}
+}
+
 export const scheduleClipboardClear = (copiedToken: string) => {
 	const settings = getSettings()
 	const raw = settings?.settings?.clearClipboard ?? 3
 	const timeoutSec = CLEAR_CLIPBOARD_SECONDS[raw] !== undefined ? CLEAR_CLIPBOARD_SECONDS[raw] : raw
 
-	lastCopiedToken = copiedToken.replace(/\s+/g, "")
+	const cleanTarget = copiedToken.replace(/\s+/g, "")
+	lastCopiedToken = cleanTarget
 
 	if (timeoutSec <= 0) return
 
-	if (clearTimer) clearTimeout(clearTimer)
+	if (clearTimer) {
+		clearTimeout(clearTimer)
+		clearTimer = null
+	}
 
-	const cleanTarget = lastCopiedToken
-
-	clearTimer = setTimeout(async () => {
+	const thisTimer = setTimeout(async () => {
 		try {
 			const current = await clipboard.readText()
 			if (current && current.replace(/\s+/g, "") === cleanTarget) {
@@ -40,10 +57,17 @@ export const scheduleClipboardClear = (copiedToken: string) => {
 		} catch (e) {
 			console.error("Failed to clear clipboard:", e)
 		} finally {
-			lastCopiedToken = null
-			clearTimer = null
+			// Only clear if no newer token was copied in the interim
+			if (lastCopiedToken === cleanTarget) {
+				lastCopiedToken = null
+			}
+			if (clearTimer === thisTimer) {
+				clearTimer = null
+			}
 		}
 	}, timeoutSec * 1000)
+
+	clearTimer = thisTimer
 }
 
 /**

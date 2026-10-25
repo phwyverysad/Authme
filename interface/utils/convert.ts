@@ -94,6 +94,7 @@ export const textConverter = (text: string, sortNumber: number): LibImportFile =
 	const issuers: string[] = []
 	const types: string[] = []
 	const uniqIds: string[] = []
+	let invalidCount = 0
 
 	for (const entry of parsedEntries) {
 		try {
@@ -101,9 +102,26 @@ export const textConverter = (text: string, sortNumber: number): LibImportFile =
 				secret: entry.secret,
 			}).generate()
 		} catch (error) {
-			dialog.message(getLanguage().import?.errors?.totpGenFailed || "Failed to generate TOTP code from secret.", { kind: "error" })
-			logger.error(`Failed to generate TOTP code from secret: ${error}`)
+			invalidCount++
+			logger.warn(`Skipping invalid account "${entry.name}" (${entry.issuer}): Failed to generate TOTP code from secret: ${error}`)
+			continue
+		}
 
+		const cleanIssuer = (entry.issuer || "").trim()
+		const cleanName = cleanAccountName(entry.name, cleanIssuer)
+		names.push(cleanName)
+		secrets.push(entry.secret)
+		issuers.push(cleanIssuer)
+		types.push(entry.type)
+		uniqIds.push(crypto.randomUUID())
+	}
+
+	if (invalidCount > 0) {
+		dialog.message(getLanguage().import?.errors?.totpGenFailed || "Failed to generate TOTP code from secret.", {
+			kind: names.length === 0 ? "error" : "warning",
+		})
+
+		if (names.length === 0) {
 			const currentState = getState()
 			currentState.importData = null
 			setState(currentState)
@@ -116,14 +134,6 @@ export const textConverter = (text: string, sortNumber: number): LibImportFile =
 				uniqIds: [],
 			}
 		}
-
-		const cleanIssuer = (entry.issuer || "").trim()
-		const cleanName = cleanAccountName(entry.name, cleanIssuer)
-		names.push(cleanName)
-		secrets.push(entry.secret)
-		issuers.push(cleanIssuer)
-		types.push(entry.type)
-		uniqIds.push(crypto.randomUUID())
 	}
 
 	// Put unsorted codes in a map
@@ -176,39 +186,59 @@ export const textConverter = (text: string, sortNumber: number): LibImportFile =
  * @return {string} string
  */
 export const totpImageConverter = (data: string): string => {
-	const uri = new URL(data)
-
-	// get name
-	const rawLabel = decodeURIComponent(uri.pathname.slice(1))
-
-	// get secret
-	const secret = uri.searchParams.get("secret")
-
-	// get issuer
-	let issuer = uri.searchParams.get("issuer")
-
-	let name = rawLabel
-	if (rawLabel.includes(":")) {
-		const parts = rawLabel.split(":")
-		const prefix = parts[0].trim()
-		const remainder = parts.slice(1).join(":").trim()
-		if (!issuer || issuer === "" || issuer === null) {
-			issuer = prefix
+	try {
+		if (!data || typeof data !== "string" || data.trim() === "") {
+			return ""
 		}
-		if (remainder) {
-			name = remainder
+
+		const uri = new URL(data)
+
+		// get name & sanitize newlines
+		const rawLabel = decodeURIComponent(uri.pathname.slice(1)).replace(/[\r\n]+/g, " ").trim()
+
+		// get secret & sanitize newlines
+		const rawSecret = (uri.searchParams.get("secret") || "").replace(/[\r\n]+/g, " ").trim()
+		if (!rawSecret) {
+			return ""
 		}
+
+		// get issuer & sanitize newlines
+		let issuer = (uri.searchParams.get("issuer") || "").replace(/[\r\n]+/g, " ").trim()
+
+		let name = rawLabel
+		if (rawLabel.includes(":")) {
+			const parts = rawLabel.split(":")
+			const prefix = parts[0].trim()
+			const remainder = parts.slice(1).join(":").trim()
+			if (!issuer || issuer === "") {
+				issuer = prefix
+			}
+			if (remainder) {
+				name = remainder
+			}
+		}
+
+		// check if issuer is empty
+		if (issuer === "") {
+			issuer = name
+		}
+
+		name = cleanAccountName(name, issuer)
+
+		// Sanitize CRLF injection: prevent newline injection in line-based Authme format
+		const cleanName = (name || "").replace(/[\r\n]+/g, " ").trim()
+		const cleanIssuer = (issuer || "").replace(/[\r\n]+/g, " ").trim()
+		const cleanSecret = (rawSecret || "").replace(/[\r\n]+/g, " ").trim()
+
+		if (!cleanSecret) {
+			return ""
+		}
+
+		// add to final string
+		return `\nName:   ${cleanName} \nSecret: ${cleanSecret} \nIssuer: ${cleanIssuer} \nType:   OTP_TOTP\n`
+	} catch (e) {
+		return ""
 	}
-
-	// check if issuer is empty
-	if (issuer === "" || issuer === null) {
-		issuer = name
-	}
-
-	name = cleanAccountName(name, issuer)
-
-	// add to final string
-	return `\nName:   ${name} \nSecret: ${secret} \nIssuer: ${issuer} \nType:   OTP_TOTP\n`
 }
 
 /**
@@ -220,20 +250,27 @@ export const migrationImageConverter = async (data: string): Promise<string> => 
 	// return string
 	let returnString = ""
 
-	// decode data
-	const decoded: LibCodesFormat[] = await invoke("google_authenticator_converter", { secret: data })
+	try {
+		// decode data
+		const decoded: LibCodesFormat[] = await invoke("google_authenticator_converter", { secret: data })
 
-	if (decoded.length === 0) {
+		if (!decoded || decoded.length === 0) {
+			return ""
+		}
+
+		// make a string
+		decoded.forEach((element) => {
+			const cleanSecret = (element.secret || "").replace(/[\r\n]+/g, " ").trim()
+			if (!cleanSecret) return
+
+			const cleanIssuer = (element.issuer || "").replace(/[\r\n]+/g, " ").trim()
+			const cleanName = cleanAccountName(element.name, cleanIssuer).replace(/[\r\n]+/g, " ").trim()
+			const tempString = `\nName:   ${cleanName} \nSecret: ${cleanSecret} \nIssuer: ${cleanIssuer || cleanName} \nType:   OTP_TOTP\n`
+			returnString += tempString
+		})
+	} catch (e) {
 		return ""
 	}
-
-	// make a string
-	decoded.forEach((element) => {
-		const cleanIssuer = (element.issuer || "").trim()
-		const cleanName = cleanAccountName(element.name, cleanIssuer)
-		const tempString = `\nName:   ${cleanName} \nSecret: ${element.secret} \nIssuer: ${cleanIssuer || cleanName} \nType:   OTP_TOTP\n`
-		returnString += tempString
-	})
 
 	return returnString
 }

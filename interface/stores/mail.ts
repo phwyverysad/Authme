@@ -6,6 +6,7 @@ import { showToast } from "./dialog"
 import { language } from "@utils/language"
 import { normalizeCategory } from "../utils/icons"
 import { getAccurateTimestamp } from "../utils/timeSync"
+import { getCurrentCodesData } from "../windows/codes"
 
 export interface MailAccount {
 	id: string
@@ -558,7 +559,7 @@ export function getMatching2FACode(
 	provider: string
 ): { token: string; secondsRemaining: number; title: string } | null {
 	if (typeof window === "undefined") return null
-	const codesData = (window as any).__authme_codes?.getCodesData?.()
+	const codesData = getCurrentCodesData()
 	if (!codesData || !codesData.names || codesData.names.length === 0) return null
 
 	const normalizedEmail = (email || "").toLowerCase().trim()

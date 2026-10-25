@@ -74,6 +74,7 @@ export const buildOtpauthUri = (account: {
  * Decode base32 string to raw bytes
  */
 export const base32ToBytes = (str: string): Uint8Array => {
+	if (!str) return new Uint8Array()
 	const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"
 	const clean = str.replace(/[\s-=]+/g, "").toUpperCase()
 	let bits = 0
@@ -268,7 +269,8 @@ export const formatSecretGroups = (secret: string): string => {
 	return secret.replace(/\s+/g, "").match(/.{1,4}/g)?.join(" ") || secret
 }
 
-export function escapeHtml(text: string): string {
+export function escapeHtml(text: string | null | undefined): string {
+	if (text == null) return ""
 	return String(text)
 		.replace(/&/g, "&amp;")
 		.replace(/</g, "&lt;")
@@ -345,7 +347,7 @@ export const generateCsvExport = (accounts: ExportAccountItem[]): string => {
 	return rows
 		.map((row) =>
 			row
-				.map((col) => `"${String(col).replace(/"/g, '""')}"`)
+				.map((col) => `"${String(col ?? "").replace(/"/g, '""')}"`)
 				.join(",")
 		)
 		.join("\r\n")
@@ -401,7 +403,7 @@ export const generateMailCsvExport = (accounts: ExportMailItem[]): string => {
 	return rows
 		.map((row) =>
 			row
-				.map((col) => `"${String(col).replace(/"/g, '""')}"`)
+				.map((col) => `"${String(col ?? "").replace(/"/g, '""')}"`)
 				.join(",")
 		)
 		.join("\r\n")
@@ -482,7 +484,7 @@ export const generateHtmlDocument = (accounts: ExportAccountItem[]): string => {
 					<span class="qr-label">OTPAUTH URI</span>
 					<div class="qr-uri-row">
 						<input type="text" readonly value="${escapeHtml(uri)}" class="qr-uri-input" />
-						<button type="button" class="copy-btn" onclick="navigator.clipboard.writeText('${escapeJsString(uri)}'); this.innerText='Copied!'; setTimeout(()=>this.innerText='Copy', 1500)">Copy</button>
+						<button type="button" class="copy-btn" onclick="copyUri(this)">Copy</button>
 					</div>
 				</div>
 			</div>
@@ -761,6 +763,21 @@ export const generateHtmlDocument = (accounts: ExportAccountItem[]): string => {
 			${cardsHtml}
 		</main>
 	</div>
+	<script>
+		function copyUri(btn) {
+			var row = btn.closest ? btn.closest('.qr-uri-row') : btn.parentElement;
+			var input = row ? row.querySelector('.qr-uri-input') : null;
+			if (input && input.value) {
+				navigator.clipboard.writeText(input.value).then(function() {
+					var orig = btn.innerText;
+					btn.innerText = 'Copied!';
+					setTimeout(function() { btn.innerText = orig; }, 1500);
+				}).catch(function(err) {
+					console.error('Copy failed:', err);
+				});
+			}
+		}
+	</script>
 </body>
 </html>`
 }

@@ -17,6 +17,31 @@ pub struct MailAccount {
     pub created_at: u64,
 }
 
+pub fn sanitize_account_id(id: &str) -> Result<String, String> {
+    let trimmed = id.trim();
+    if trimmed.is_empty() || trimmed.len() > 64 {
+        return Err("Invalid account ID length".to_string());
+    }
+    if !trimmed.chars().all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-') {
+        return Err("Account ID contains invalid characters".to_string());
+    }
+    if trimmed == "." || trimmed == ".." {
+        return Err("Invalid account ID".to_string());
+    }
+    Ok(trimmed.to_string())
+}
+
+pub fn truncate_str(s: &str, max_bytes: usize) -> &str {
+    if s.len() <= max_bytes {
+        return s;
+    }
+    let mut boundary = max_bytes;
+    while boundary > 0 && !s.is_char_boundary(boundary) {
+        boundary -= 1;
+    }
+    &s[..boundary]
+}
+
 pub fn clean_email_str(s: &str) -> Option<String> {
     let at_idx = s.find('@')?;
     let prefix = &s[..at_idx];
@@ -98,7 +123,13 @@ fn save_accounts_to_disk(path: &std::path::Path, accounts: &[MailAccount]) -> Re
         }
     }
     let json = serde_json::to_string_pretty(&disk_accounts).map_err(|e| e.to_string())?;
-    fs::write(path, json).map_err(|e| e.to_string())
+    let tmp_path = path.with_extension("tmp");
+    if fs::write(&tmp_path, &json).is_ok() {
+        let _ = fs::rename(&tmp_path, path);
+        Ok(())
+    } else {
+        fs::write(path, json).map_err(|e| e.to_string())
+    }
 }
 
 #[tauri::command]
@@ -210,6 +241,7 @@ pub fn get_mail_accounts(app: AppHandle) -> Vec<MailAccount> {
 
 #[tauri::command]
 pub fn save_mail_account(app: AppHandle, mut account: MailAccount) -> Result<Vec<MailAccount>, String> {
+    account.id = sanitize_account_id(&account.id)?;
     let path = get_accounts_path(&app);
     let mut accounts = get_mail_accounts(app.clone());
 
@@ -244,14 +276,15 @@ pub fn save_mail_account(app: AppHandle, mut account: MailAccount) -> Result<Vec
 
 #[tauri::command]
 pub async fn delete_mail_account(app: AppHandle, id: String) -> Result<Vec<MailAccount>, String> {
+    let safe_id = sanitize_account_id(&id)?;
     let path = get_accounts_path(&app);
     let mut accounts = get_mail_accounts(app.clone());
-    accounts.retain(|a| a.id != id);
+    accounts.retain(|a| a.id != safe_id);
 
     save_accounts_to_disk(&path, &accounts)?;
 
     // Close and destroy the webview for this deleted account
-    let target_label = format!("mail_view_{}", id);
+    let target_label = format!("mail_view_{}", safe_id);
     for (label, wv) in app.webviews() {
         if label == target_label {
             let _ = wv.close();
@@ -261,16 +294,17 @@ pub async fn delete_mail_account(app: AppHandle, id: String) -> Result<Vec<MailA
     // Reset active view if it was pointing to this deleted account
     {
         let mut state = MAIL_STATE.lock().unwrap_or_else(|e| e.into_inner());
-        state.active_login_sessions.remove(&id);
-        state.detected_emails.remove(&id);
+        state.active_login_sessions.remove(&safe_id);
+        state.detected_emails.remove(&safe_id);
         if state.current_active_view.as_deref() == Some(&target_label) {
             state.current_active_view = None;
         }
     }
 
     // Clean up profile folder with retry backoff in case WebView2 holds OS file locks
-    let profile_dir = get_profiles_dir(&app).join(&id);
-    if profile_dir.exists() {
+    let profiles_dir = get_profiles_dir(&app);
+    let profile_dir = profiles_dir.join(&safe_id);
+    if profile_dir.parent() == Some(profiles_dir.as_path()) && profile_dir.exists() {
         let p = profile_dir.clone();
         std::thread::spawn(move || {
             for delay in [300, 700, 1500] {
@@ -478,23 +512,34 @@ async fn create_embedded_webview(
     password: Option<String>,
     visible: bool,
 ) -> Result<(), String> {
+    let safe_id = sanitize_account_id(&id)?;
     if is_login_mode {
-        register_login_session(&id);
+        register_login_session(&safe_id);
     }
     if let Some(ref em) = email {
         if !em.trim().is_empty() {
-            record_detected_email(&id, em);
+            record_detected_email(&safe_id, em);
         }
     }
 
-    let view_label = format!("mail_view_{}", id);
+    let view_label = format!("mail_view_{}", safe_id);
     let parsed_url = tauri::Url::parse(&url).map_err(|e| e.to_string())?;
+    if parsed_url.scheme() != "http" && parsed_url.scheme() != "https" {
+        return Err("Only HTTP and HTTPS URLs are permitted".to_string());
+    }
+    if parsed_url.host_str().is_none() || parsed_url.host_str().unwrap().is_empty() {
+        return Err("URL must contain a valid host".to_string());
+    }
 
     let window = app
         .get_window("main")
         .ok_or_else(|| "Main window 'main' not found".to_string())?;
 
-    let profile_dir = get_profiles_dir(&app).join(&id);
+    let profiles_dir = get_profiles_dir(&app);
+    let profile_dir = profiles_dir.join(&safe_id);
+    if profile_dir.parent() != Some(profiles_dir.as_path()) {
+        return Err("Path traversal detected".to_string());
+    }
     let _ = fs::create_dir_all(&profile_dir);
 
     let autofill_email_json = serde_json::to_string(&email).unwrap_or_else(|_| "null".to_string());
@@ -948,9 +993,9 @@ pub async fn preload_all_mail_webviews(app: AppHandle) -> Result<(), String> {
         width: init_width,
         height: init_height,
     };
-    // Preload ALL connected mail accounts concurrently in background on startup
-    // so that opening any account is instantaneous with 0 loading delay
-    for acc in &accounts {
+    // Preload top connected mail accounts concurrently in background on startup
+    // (capped at top 6 accounts to protect system memory on low-spec hardware)
+    for acc in accounts.iter().take(6) {
         let target_id = acc.id.clone();
         let target_label = format!("mail_view_{}", target_id);
         if app.get_webview(&target_label).is_none() {
@@ -1015,20 +1060,33 @@ pub async fn open_mail_view(
     email: Option<String>,
     password: Option<String>,
 ) -> Result<(), String> {
+    let safe_id = sanitize_account_id(&id)?;
+    // Security validation: Only allow http and https protocols to prevent local command/protocol injection
+    let parsed_check = tauri::Url::parse(&url).map_err(|e| format!("Invalid URL: {}", e))?;
+    if parsed_check.scheme() != "http" && parsed_check.scheme() != "https" {
+        return Err("Only HTTP and HTTPS URLs are permitted".to_string());
+    }
+    if parsed_check.host_str().is_none() || parsed_check.host_str().unwrap().is_empty() {
+        return Err("URL must contain a valid host".to_string());
+    }
+    if url.chars().any(|c| c.is_ascii_control() || c == '"') {
+        return Err("Invalid URL format".to_string());
+    }
+
     let is_login_flag = is_login.unwrap_or(false);
     if is_login_flag {
-        register_login_session(&id);
+        register_login_session(&safe_id);
     } else {
-        unregister_login_session(&id);
+        unregister_login_session(&safe_id);
     }
 
     if let Some(ref em) = email {
         if !em.trim().is_empty() {
-            record_detected_email(&id, em);
+            record_detected_email(&safe_id, em);
         }
     }
 
-    let view_label = format!("mail_view_{}", id);
+    let view_label = format!("mail_view_{}", safe_id);
     let width = bounds.width.max(100.0);
     let height = bounds.height.max(100.0);
     let on_screen_pos = LogicalPosition::new(bounds.x, bounds.y);
@@ -1056,9 +1114,10 @@ pub async fn open_mail_view(
         let _ = wv.show();
         let _ = wv.set_focus();
 
+        let url_json = serde_json::to_string(&url).unwrap_or_else(|_| "\"about:blank\"".to_string());
         let js_nav = format!(
-            "if (!window.location.href || window.location.href === 'about:blank') {{ window.location.href = '{}'; }}",
-            url.replace('\'', "\\'")
+            "if (!window.location.href || window.location.href === 'about:blank') {{ window.location.href = {}; }}",
+            url_json
         );
         let _ = wv.eval(&js_nav);
 
@@ -1255,15 +1314,16 @@ pub async fn close_mail_view(app: AppHandle) -> Result<(), String> {
 
 #[tauri::command]
 pub async fn cancel_login_session(app: AppHandle, id: String) -> Result<(), String> {
-    unregister_login_session(&id);
+    let safe_id = sanitize_account_id(&id)?;
+    unregister_login_session(&safe_id);
 
     if let Ok(mut state) = MAIL_STATE.lock() {
-        if state.current_active_view.as_deref() == Some(&format!("mail_view_{}", id)) {
+        if state.current_active_view.as_deref() == Some(&format!("mail_view_{}", safe_id)) {
             state.current_active_view = None;
         }
     }
 
-    let target_label = format!("mail_view_{}", id);
+    let target_label = format!("mail_view_{}", safe_id);
     for (label, wv) in app.webviews() {
         if label == target_label {
             let _ = wv.close();
@@ -1272,9 +1332,10 @@ pub async fn cancel_login_session(app: AppHandle, id: String) -> Result<(), Stri
 
     // Only clean up profile directory if this account is NOT a saved account
     let accounts = get_mail_accounts(app.clone());
-    if !accounts.iter().any(|a| a.id == id) {
-        let profile_dir = get_profiles_dir(&app).join(&id);
-        if profile_dir.exists() {
+    if !accounts.iter().any(|a| a.id == safe_id) {
+        let profiles_dir = get_profiles_dir(&app);
+        let profile_dir = profiles_dir.join(&safe_id);
+        if profile_dir.parent() == Some(profiles_dir.as_path()) && profile_dir.exists() {
             let p = profile_dir.clone();
             std::thread::spawn(move || {
                 for delay in [300, 700, 1500] {
@@ -1297,6 +1358,12 @@ pub fn open_external_url(app: AppHandle, url: String) -> Result<(), String> {
     let parsed = tauri::Url::parse(&url).map_err(|e| format!("Invalid URL: {}", e))?;
     if parsed.scheme() != "http" && parsed.scheme() != "https" {
         return Err("Only HTTP and HTTPS URLs are permitted".to_string());
+    }
+    if parsed.host_str().is_none() || parsed.host_str().unwrap().is_empty() {
+        return Err("URL must contain a valid host".to_string());
+    }
+    if url.chars().any(|c| c.is_ascii_control() || c == '"') {
+        return Err("Invalid URL format".to_string());
     }
 
     if let Ok(()) = tauri_plugin_opener::OpenerExt::opener(&app).open_url(parsed.as_str(), None::<&str>) {
@@ -1349,17 +1416,32 @@ fn to_base64(bytes: &[u8]) -> String {
     res
 }
 
+static LAST_NOTIFICATION_TIME: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+
 #[tauri::command]
 pub fn send_mail_notification(title: String, body: String) {
     #[cfg(target_os = "windows")]
     {
+        let now_ms = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_millis() as u64)
+            .unwrap_or(0);
+        let last = LAST_NOTIFICATION_TIME.load(std::sync::atomic::Ordering::Relaxed);
+        if now_ms.saturating_sub(last) < 500 {
+            return;
+        }
+        LAST_NOTIFICATION_TIME.store(now_ms, std::sync::atomic::Ordering::Relaxed);
+
+        let safe_title = truncate_str(&title, 256).to_string();
+        let safe_body = truncate_str(&body, 1024).to_string();
+
         std::thread::spawn(move || {
             use std::process::Command;
             use std::os::windows::process::CommandExt;
             const CREATE_NO_WINDOW: u32 = 0x08000000;
 
-            let escaped_title = xml_escape(&title);
-            let escaped_body = xml_escape(&body);
+            let escaped_title = xml_escape(&safe_title);
+            let escaped_body = xml_escape(&safe_body);
             let xml = format!(
                 "<toast><visual><binding template=\"ToastGeneric\"><text>{}</text><text>{}</text></binding></visual></toast>",
                 escaped_title, escaped_body
@@ -1389,6 +1471,26 @@ pub fn send_mail_notification(title: String, body: String) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_sanitize_account_id() {
+        assert_eq!(sanitize_account_id("mail_1234567890").unwrap(), "mail_1234567890");
+        assert_eq!(sanitize_account_id("account_user-123").unwrap(), "account_user-123");
+        assert!(sanitize_account_id("../evil_traversal").is_err());
+        assert!(sanitize_account_id("..").is_err());
+        assert!(sanitize_account_id(".").is_err());
+        assert!(sanitize_account_id("").is_err());
+    }
+
+    #[test]
+    fn test_truncate_str_utf8() {
+        let ascii = "Hello world";
+        assert_eq!(truncate_str(ascii, 5), "Hello");
+
+        let thai = "กล่องจดหมายเข้า";
+        let truncated = truncate_str(thai, 10);
+        assert!(std::str::from_utf8(truncated.as_bytes()).is_ok());
+    }
 
     #[test]
     fn test_extract_email_from_gmail_title() {
@@ -1624,7 +1726,7 @@ mod tests {
 
     #[test]
     fn test_save_accounts_to_disk_encrypts_passwords() {
-        let _guard = crate::encryption::tests::TEST_MUTEX.lock().unwrap();
+        let _guard = crate::encryption::tests::TEST_MUTEX.lock().unwrap_or_else(|e| e.into_inner());
         let temp_dir = std::env::temp_dir();
         let test_file = temp_dir.join(format!("test_mail_acc_{}.json", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
 
