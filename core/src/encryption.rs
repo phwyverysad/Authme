@@ -74,6 +74,12 @@ fn get_fallback_key_paths() -> Vec<PathBuf> {
 }
 
 pub fn save_fallback_key(key: &str) {
+    #[cfg(test)]
+    {
+        if std::env::var("AUTHME_TEST_VAULT_DIR").is_err() {
+            return;
+        }
+    }
     let trimmed = key.trim();
     if trimmed.is_empty() || trimmed == "error" {
         return;
@@ -101,6 +107,12 @@ pub fn get_fallback_key() -> Option<String> {
 }
 
 pub fn delete_fallback_key() {
+    #[cfg(test)]
+    {
+        if std::env::var("AUTHME_TEST_VAULT_DIR").is_err() {
+            return;
+        }
+    }
     for path in get_fallback_key_paths() {
         let _ = fs::remove_file(path);
     }
@@ -130,6 +142,12 @@ fn get_keyring_key(service: &str) -> Option<String> {
 }
 
 fn set_keyring_key_with_name(service: &str, name: &str, key: &str) -> bool {
+    #[cfg(test)]
+    {
+        if service == "authme" || service == "authme_dev" {
+            return true;
+        }
+    }
     let key_name = if name.trim().is_empty() { "encryptionKey" } else { name };
     if let Ok(entry) = keyring::Entry::new(service, key_name) {
         entry.set_password(key).is_ok()
@@ -143,6 +161,9 @@ fn set_keyring_key(service: &str, key: &str) -> bool {
 }
 
 fn sync_keyring_key(key: &str) {
+    #[cfg(test)]
+    let _ = key;
+    #[cfg(not(test))]
     if !key.is_empty() && key != "error" {
         let _ = set_keyring_key("authme", key);
         let _ = set_keyring_key("authme_dev", key);
