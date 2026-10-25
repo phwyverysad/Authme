@@ -167,13 +167,9 @@
 					{/if}
 				</div>
 
-				<!-- Step 2: Hero - All-In-One Transfer QR Code (Combined 1-3 QRs) -->
-				<div class="transparent-800 flex w-full flex-col md:flex-row md:items-center justify-between rounded-xl p-6 md:p-8 text-left border-2 border-emerald-500/50 bg-emerald-50/60 dark:bg-emerald-500/10">
+				<!-- Step 2: All-In-One Transfer QR Code (Combined 1-3 QRs) -->
+				<div class="transparent-800 flex w-full flex-col md:flex-row md:items-center justify-between rounded-xl p-6 md:p-8 text-left">
 					<div class="max-w-2xl pr-4">
-						<div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-500/25 dark:text-emerald-300 mb-2 border border-emerald-300 dark:border-transparent">
-							<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-							<span>{language.export?.recommendedBadge || "RECOMMENDED • ALL AUTHENTICATORS"}</span>
-						</div>
 						<h2>{language.export?.allInOneQrCard || "All-In-One Transfer QR Code (1-3 QR)"}</h2>
 						<h3>{language.export?.allInOneQrCardText || "Google Authenticator migration protocol. Bundles up to 10 accounts per QR code for 1-tap transfer to Google Authenticator, 2FAS, Aegis, Ente, or Raivo."}</h3>
 					</div>
@@ -181,14 +177,14 @@
 					<div class="mt-6 md:mt-0 flex-shrink-0">
 						<button
 							type="button"
-							class="button !bg-emerald-600 hover:!bg-emerald-500 !text-white !border-emerald-600 cursor-pointer shadow-md"
+							class="button cursor-pointer"
 							disabled={selectedCount === 0}
 							on:click={openMigrationModal}
 						>
 							<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg>
 							<span>{language.export?.viewAllInOneQrButton || "Open Transfer QR"}</span>
 							{#if selectedCount > 0}
-								<span class="ml-1 px-2 py-0.5 rounded-full text-xs bg-black/25 text-white font-bold">
+								<span class="ml-1 px-2 py-0.5 rounded-full text-xs bg-black/15 dark:bg-white/20 font-bold">
 									{Math.ceil(selectedCount / 10)} QR
 								</span>
 							{/if}

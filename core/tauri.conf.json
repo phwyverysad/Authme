@@ -61,7 +61,7 @@
 				"theme": "Dark",
 				"contentProtected": false,
 				"useHttpsScheme": true,
-				"devtools": true
+				"devtools": false
 			}
 		],
 		"security": {

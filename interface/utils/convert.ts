@@ -11,6 +11,8 @@ interface ParsedEntry {
 	secret: string
 	issuer: string
 	type: string
+	noteTitle?: string
+	note?: string
 }
 
 /**
@@ -33,7 +35,7 @@ export const textConverter = (text: string, sortNumber: number): LibImportFile =
 	// Normalize text: strip double quotes, split attribute keys on commas if inline, split on lines
 	const lines = text
 		.replace(/"/g, "")
-		.replace(/,\s*(Name|Secret|Issuer|Type)\s*:/gi, "\n$1:")
+		.replace(/,\s*(Name|Secret|Issuer|Type|NoteTitle|Note)\s*:/gi, "\n$1:")
 		.split(/\r?\n/)
 		.map((l) => l.trim())
 		.filter((l) => l.length > 0)
@@ -47,8 +49,10 @@ export const textConverter = (text: string, sortNumber: number): LibImportFile =
 			const rawSecret = (currentEntry.secret || "").replace(/[\s-]+/g, "").toUpperCase()
 			const issuer = currentEntry.issuer || name
 			const type = currentEntry.type || "OTP_TOTP"
+			const noteTitle = currentEntry.noteTitle || ""
+			const note = currentEntry.note || ""
 			if (rawSecret) {
-				parsedEntries.push({ name, secret: rawSecret, issuer, type })
+				parsedEntries.push({ name, secret: rawSecret, issuer, type, noteTitle, note })
 			}
 		}
 		currentEntry = null
@@ -59,6 +63,8 @@ export const textConverter = (text: string, sortNumber: number): LibImportFile =
 		const secretMatch = line.match(/^Secret\s*:\s*(.*)$/i)
 		const issuerMatch = line.match(/^Issuer\s*:\s*(.*)$/i)
 		const typeMatch = line.match(/^Type\s*:\s*(.*)$/i)
+		const noteTitleMatch = line.match(/^NoteTitle\s*:\s*(.*)$/i)
+		const noteMatch = line.match(/^Note\s*:\s*(.*)$/i)
 
 		if (nameMatch) {
 			if (currentEntry && currentEntry.name !== undefined) {
@@ -84,6 +90,12 @@ export const textConverter = (text: string, sortNumber: number): LibImportFile =
 			}
 			if (!currentEntry) currentEntry = {}
 			currentEntry.type = typeMatch[1].trim()
+		} else if (noteTitleMatch) {
+			if (!currentEntry) currentEntry = {}
+			currentEntry.noteTitle = noteTitleMatch[1].trim()
+		} else if (noteMatch) {
+			if (!currentEntry) currentEntry = {}
+			currentEntry.note = noteMatch[1].trim()
 		}
 	}
 
@@ -94,6 +106,8 @@ export const textConverter = (text: string, sortNumber: number): LibImportFile =
 	const issuers: string[] = []
 	const types: string[] = []
 	const uniqIds: string[] = []
+	const notes: string[] = []
+	const noteTitles: string[] = []
 	let invalidCount = 0
 
 	for (const entry of parsedEntries) {
@@ -114,6 +128,8 @@ export const textConverter = (text: string, sortNumber: number): LibImportFile =
 		issuers.push(cleanIssuer)
 		types.push(entry.type)
 		uniqIds.push(crypto.randomUUID())
+		notes.push(entry.note || "")
+		noteTitles.push(entry.noteTitle || "")
 	}
 
 	if (invalidCount > 0) {
@@ -132,6 +148,8 @@ export const textConverter = (text: string, sortNumber: number): LibImportFile =
 				issuers: [],
 				types: [],
 				uniqIds: [],
+				notes: [],
+				noteTitles: [],
 			}
 		}
 	}
@@ -146,6 +164,8 @@ export const textConverter = (text: string, sortNumber: number): LibImportFile =
 			secret: secrets[i],
 			issuer: issuers[i],
 			type: types[i],
+			noteTitle: noteTitles[i] || "",
+			note: notes[i] || "",
 		})
 	}
 
@@ -163,12 +183,16 @@ export const textConverter = (text: string, sortNumber: number): LibImportFile =
 	const sortedSecrets: string[] = []
 	const sortedIssuers: string[] = []
 	const sortedTypes: string[] = []
+	const sortedNotes: string[] = []
+	const sortedNoteTitles: string[] = []
 	sortedMap.forEach((value, key) => {
 		sortedUniqIds.push(key)
 		sortedNames.push(value.name)
 		sortedSecrets.push(value.secret)
 		sortedIssuers.push(value.issuer)
 		sortedTypes.push(value.type)
+		sortedNotes.push(value.note || "")
+		sortedNoteTitles.push(value.noteTitle || "")
 	})
 
 	return {
@@ -177,6 +201,8 @@ export const textConverter = (text: string, sortNumber: number): LibImportFile =
 		issuers: sortedIssuers,
 		types: sortedTypes,
 		uniqIds: sortedUniqIds,
+		notes: sortedNotes,
+		noteTitles: sortedNoteTitles,
 	}
 }
 

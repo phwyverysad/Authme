@@ -2,6 +2,8 @@
 #![allow(dead_code, unused_imports, unused_variables)]
 
 use std::env;
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::time::{SystemTime, UNIX_EPOCH};
 use tauri::{
     menu::{MenuBuilder, MenuItemBuilder},
     tray::{MouseButton, MouseButtonState, TrayIconEvent},
@@ -20,13 +22,22 @@ struct Payload {
     event: bool,
 }
 
-fn show_main_window(window: &tauri::Window) {
+static LAST_TRAY_EVENT_TIME: AtomicU64 = AtomicU64::new(0);
+
+fn now_millis() -> u64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_millis() as u64
+}
+
+fn show_main_window(window: &tauri::WebviewWindow) {
     if window.is_minimized().unwrap_or(false) {
         let _ = window.unminimize();
     }
     if let Ok(pos) = window.outer_position() {
         if pos.x <= -10000 || pos.y <= -10000 {
-            window_state::restore_window_state(window);
+            window_state::restore_window_state(&window.as_ref().window());
         }
     }
     let _ = window.show();
@@ -96,20 +107,20 @@ fn main() {
         .plugin(tauri_plugin_single_instance::init(|app, argv, cwd| {
             println!("{}, {argv:?}, {cwd}", app.package_info().name);
 
-            if let Some(window) = app.get_window("main") {
+            if let Some(window) = app.get_webview_window("main") {
                 let _ = app.emit("openCodes", Payload { event: true });
                 show_main_window(&window);
             }
         }))
         .setup(|app| {
-            let window = match app.get_window("main") {
+            let window = match app.get_webview_window("main") {
                 Some(w) => w,
                 None => return Ok(()),
             };
 
             // Initialize window lifecycle flags and restore saved geometry before displaying
             window_state::init_window_state(app.handle());
-            window_state::restore_window_state(&window);
+            window_state::restore_window_state(&window.as_ref().window());
 
             // Prime encryption key in background thread immediately so fast-path decryption is instantly available
             let _ = std::thread::spawn(|| {
@@ -127,6 +138,7 @@ fn main() {
                 show_main_window(&window);
             }
 
+            #[cfg(debug_assertions)]
             if args.iter().any(|a| a == "--devtools") {
                 if let Some(webview) = app.get_webview("main") {
                     let _ = webview.open_devtools();
@@ -142,14 +154,12 @@ fn main() {
                 });
             });
 
-
-
             // Tray
-            let toggle_window_item =
-                MenuItemBuilder::with_id("toggle_windows", "Show/Hide Authme").build(app)?;
+            let show_window_item =
+                MenuItemBuilder::with_id("show_window", "Show Authme").build(app)?;
             let exit_item = MenuItemBuilder::with_id("exit", "Exit").build(app)?;
             let menu = MenuBuilder::new(app)
-                .items(&[&toggle_window_item, &exit_item])
+                .items(&[&show_window_item, &exit_item])
                 .build()?;
 
             if let Some(tray) = app.tray_by_id("main") {
@@ -159,18 +169,10 @@ fn main() {
                 }
 
                 tray.on_menu_event(move |app, event| match event.id().as_ref() {
-                    "toggle_windows" => {
-                        if let Some(window) = app.get_window("main") {
-                            let window_visible = window.is_visible().unwrap_or(false);
-                            let window_minimized = window.is_minimized().unwrap_or(false);
-
-                            if window_visible && !window_minimized {
-                                let _ = app.emit("openCodes", Payload { event: false });
-                                let _ = window.hide();
-                            } else {
-                                let _ = app.emit("openCodes", Payload { event: true });
-                                show_main_window(&window);
-                            }
+                    "show_window" => {
+                        if let Some(window) = app.get_webview_window("main") {
+                            let _ = app.emit("openCodes", Payload { event: true });
+                            show_main_window(&window);
                         }
                     }
                     "exit" => {
@@ -182,17 +184,30 @@ fn main() {
                 if cfg!(target_os = "windows") {
                     tray.on_tray_icon_event(|tray, event| {
                         match event {
+                            TrayIconEvent::DoubleClick {
+                                button: MouseButton::Left,
+                                ..
+                            } => {
+                                LAST_TRAY_EVENT_TIME.store(now_millis(), Ordering::Relaxed);
+                                let app = tray.app_handle();
+                                if let Some(window) = app.get_webview_window("main") {
+                                    let _ = app.emit("openCodes", Payload { event: true });
+                                    show_main_window(&window);
+                                }
+                            }
                             TrayIconEvent::Click {
                                 button: MouseButton::Left,
                                 button_state: MouseButtonState::Up,
                                 ..
-                            }
-                            | TrayIconEvent::DoubleClick {
-                                button: MouseButton::Left,
-                                ..
                             } => {
+                                let now = now_millis();
+                                let last = LAST_TRAY_EVENT_TIME.swap(now, Ordering::Relaxed);
+                                if now.saturating_sub(last) < 350 {
+                                    return;
+                                }
+
                                 let app = tray.app_handle();
-                                if let Some(window) = app.get_window("main") {
+                                if let Some(window) = app.get_webview_window("main") {
                                     let window_visible = window.is_visible().unwrap_or(false);
                                     let window_minimized = window.is_minimized().unwrap_or(false);
                                     let window_focused = window.is_focused().unwrap_or(false);

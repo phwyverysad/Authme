@@ -80,16 +80,33 @@
 
 	$: if (activeMailMenu) {
 		menuOpenedAt = Date.now()
-		const pad = 12
-		const menuWidth = 224
-		const menuHeight = 250
-		const winW = typeof window !== "undefined" ? window.innerWidth : 1000
-		const winH = typeof window !== "undefined" ? window.innerHeight : 700
+		repositionMailMenu()
+	}
 
-		menuPosX = Math.min(activeMailMenu.x, winW - menuWidth - pad)
-		menuPosY = Math.min(activeMailMenu.y, winH - menuHeight - pad)
-		if (menuPosX < pad) menuPosX = pad
-		if (menuPosY < pad) menuPosY = pad
+	const repositionMailMenu = async () => {
+		await tick()
+		const pad = 12
+		const winW = document.documentElement.clientWidth || window.innerWidth || 1000
+		const winH = document.documentElement.clientHeight || window.innerHeight || 700
+		const rect = mailMenuEl?.getBoundingClientRect()
+		const menuW = rect?.width || 224
+		const menuH = rect?.height || 260
+
+		let x = activeMailMenu?.x ?? pad
+		let y = activeMailMenu?.y ?? pad
+
+		if (x + menuW > winW - pad) {
+			x = Math.max(pad, winW - menuW - pad)
+		}
+		if (x < pad) x = pad
+
+		if (y + menuH > winH - pad) {
+			y = Math.max(pad, winH - menuH - pad)
+		}
+		if (y < pad) y = pad
+
+		menuPosX = x
+		menuPosY = y
 	}
 
 	// Upgraded pointer-based drag & drop state with 3D tilt and smooth FLIP reordering

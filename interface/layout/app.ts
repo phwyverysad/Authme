@@ -9,10 +9,8 @@ import { getState, setState } from "interface/stores/state"
 import { router } from "@baileyherbert/tinro"
 import { setEncryptionKey } from "interface/utils/encryption"
 import { dev } from "../../build.json"
-import { optionalAnalyticsPayload } from "interface/utils/analytics"
 import { checkForUpdate } from "interface/utils/update"
 import logger from "interface/utils/logger"
-import posthog from "posthog-js"
 import { generateCodeElements, preloadCodes } from "../windows/codes/index"
 
 const settings = getSettings()
@@ -126,6 +124,17 @@ appWindow.onCloseRequested((event) => {
 
 // Global shortcuts: Ctrl+L to lock app, Ctrl++/Ctrl-- to adjust display scale
 window.addEventListener("keydown", (e) => {
+	// Block developer mode shortcuts (F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C, Ctrl+U)
+	if (
+		e.key === "F12" ||
+		((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === "I" || e.key === "i" || e.key === "J" || e.key === "j" || e.key === "C" || e.key === "c")) ||
+		((e.ctrlKey || e.metaKey) && (e.key === "U" || e.key === "u"))
+	) {
+		e.preventDefault()
+		e.stopPropagation()
+		return
+	}
+
 	if ((e.ctrlKey || e.metaKey) && (e.key === "l" || e.key === "L")) {
 		e.preventDefault()
 		lockApp(true)
@@ -176,26 +185,4 @@ const launchOptions = async () => {
 
 launchOptions()
 
-// Optional analytics
-const optionalAnalytics = async () => {
-	if (settings.settings.optionalAnalytics && !dev) {
-		const payload = await optionalAnalyticsPayload()
-
-		try {
-			posthog.init("phc_QYxqnCtHIrREhZ47S6ZVPaksY8jO2j7YZCPQjbPgF09", {
-				api_host: "https://eu.i.posthog.com",
-				capture_pageview: false,
-				capture_pageleave: false,
-				persistence: "localStorage",
-				autocapture: false,
-			})
-
-			posthog.capture("app_start", { version: payload.version, build: payload.build, os: payload.os, lang: payload.lang, date: payload.date.toISOString().split("T")[0] })
-		} catch (error) {
-			logger.error(`Failed to send analytics: ${error}`)
-		}
-	}
-}
-
-optionalAnalytics()
 checkForUpdate()

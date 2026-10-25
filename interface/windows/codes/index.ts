@@ -65,7 +65,7 @@ import { showToast, activeContextMenu } from "../../stores/dialog"
 import { scheduleClipboardClear } from "../../utils/clipboardGuard"
 
 const CIRCUMFERENCE = 106.81
-let currentCodesData: LibImportFile = { names: [], secrets: [], issuers: [], uniqIds: [] }
+let currentCodesData: LibImportFile = { names: [], secrets: [], issuers: [], uniqIds: [], notes: [], noteTitles: [] }
 export const getCurrentCodesData = (): LibImportFile => currentCodesData
 let listenersInitialized = false
 let cleanupCodeDrag: () => void = () => {}
@@ -162,6 +162,8 @@ export const togglePinCodeAtIndex = async (index: number) => {
 		const issuer = currentCodesData.issuers.splice(index, 1)[0]
 		const type = currentCodesData.types ? currentCodesData.types.splice(index, 1)[0] : undefined
 		const uniqId = currentCodesData.uniqIds ? currentCodesData.uniqIds.splice(index, 1)[0] : undefined
+		const note = currentCodesData.notes ? currentCodesData.notes.splice(index, 1)[0] : undefined
+		const noteTitle = currentCodesData.noteTitles ? currentCodesData.noteTitles.splice(index, 1)[0] : undefined
 
 		// Insert directly after the last pinned item
 		let targetIndex = 0
@@ -179,6 +181,8 @@ export const togglePinCodeAtIndex = async (index: number) => {
 		currentCodesData.issuers.splice(targetIndex, 0, issuer)
 		if (type && currentCodesData.types) currentCodesData.types.splice(targetIndex, 0, type)
 		if (uniqId && currentCodesData.uniqIds) currentCodesData.uniqIds.splice(targetIndex, 0, uniqId)
+		if (note !== undefined && currentCodesData.notes) currentCodesData.notes.splice(targetIndex, 0, note)
+		if (noteTitle !== undefined && currentCodesData.noteTitles) currentCodesData.noteTitles.splice(targetIndex, 0, noteTitle)
 
 		await saveUpdatedVault(currentCodesData)
 		showToast(language.codes?.pinSuccess || "Pinned account to top", "success")
@@ -202,12 +206,16 @@ export const togglePinCodeAtIndex = async (index: number) => {
 			const issuer = currentCodesData.issuers.splice(index, 1)[0]
 			const type = currentCodesData.types ? currentCodesData.types.splice(index, 1)[0] : undefined
 			const uniqId = currentCodesData.uniqIds ? currentCodesData.uniqIds.splice(index, 1)[0] : undefined
+			const note = currentCodesData.notes ? currentCodesData.notes.splice(index, 1)[0] : undefined
+			const noteTitle = currentCodesData.noteTitles ? currentCodesData.noteTitles.splice(index, 1)[0] : undefined
 
 			currentCodesData.names.splice(lastPinnedIndex, 0, name)
 			currentCodesData.secrets.splice(lastPinnedIndex, 0, secret)
 			currentCodesData.issuers.splice(lastPinnedIndex, 0, issuer)
 			if (type && currentCodesData.types) currentCodesData.types.splice(lastPinnedIndex, 0, type)
 			if (uniqId && currentCodesData.uniqIds) currentCodesData.uniqIds.splice(lastPinnedIndex, 0, uniqId)
+			if (note !== undefined && currentCodesData.notes) currentCodesData.notes.splice(lastPinnedIndex, 0, note)
+			if (noteTitle !== undefined && currentCodesData.noteTitles) currentCodesData.noteTitles.splice(lastPinnedIndex, 0, noteTitle)
 		}
 
 		await saveUpdatedVault(currentCodesData)
@@ -418,6 +426,8 @@ export const generateCodeElements = (codes: LibImportFile) => {
 						name: curName,
 						secret: currentCodesData.secrets[idx] || "",
 						token: currentToken,
+						note: currentCodesData.notes?.[idx] || "",
+						noteTitle: currentCodesData.noteTitles?.[idx] || "",
 					})
 				}
 			}
@@ -851,6 +861,8 @@ export const generateCodeElements = (codes: LibImportFile) => {
 		const newIssuers = [...currentCodesData.issuers]
 		const newTypes = currentCodesData.types ? [...currentCodesData.types] : undefined
 		const newUniqIds = currentCodesData.uniqIds ? [...currentCodesData.uniqIds] : undefined
+		const newNotes = currentCodesData.notes ? [...currentCodesData.notes] : undefined
+		const newNoteTitles = currentCodesData.noteTitles ? [...currentCodesData.noteTitles] : undefined
 		const newRefs = [...activeCodeRefs]
 		const newQuery = [...searchQuery]
 
@@ -865,6 +877,8 @@ export const generateCodeElements = (codes: LibImportFile) => {
 			newIssuers[slot] = currentCodesData.issuers[source]
 			if (newTypes && currentCodesData.types) newTypes[slot] = currentCodesData.types[source]
 			if (newUniqIds && currentCodesData.uniqIds) newUniqIds[slot] = currentCodesData.uniqIds[source]
+			if (newNotes && currentCodesData.notes) newNotes[slot] = currentCodesData.notes[source]
+			if (newNoteTitles && currentCodesData.noteTitles) newNoteTitles[slot] = currentCodesData.noteTitles[source]
 			if (newRefs[slot] && activeCodeRefs[source]) newRefs[slot] = activeCodeRefs[source]
 			if (newQuery[slot] && searchQuery[source]) newQuery[slot] = searchQuery[source]
 		}
@@ -874,6 +888,8 @@ export const generateCodeElements = (codes: LibImportFile) => {
 		currentCodesData.issuers = newIssuers
 		if (newTypes) currentCodesData.types = newTypes
 		if (newUniqIds) currentCodesData.uniqIds = newUniqIds
+		if (newNotes) currentCodesData.notes = newNotes
+		if (newNoteTitles) currentCodesData.noteTitles = newNoteTitles
 		activeCodeRefs = newRefs
 		searchQuery = newQuery
 
@@ -1265,6 +1281,8 @@ export const generateCodeElements = (codes: LibImportFile) => {
 					secret: curSecret,
 					token: currentToken,
 					pinned: isCodePinned(curSecret),
+					note: currentCodesData.notes?.[currentIdx] || "",
+					noteTitle: currentCodesData.noteTitles?.[currentIdx] || "",
 				})
 			}
 
@@ -1456,7 +1474,7 @@ export const invalidateVaultCache = () => {
 
 export const clearCodesMemory = () => {
 	stopCodesRefresher()
-	currentCodesData = { names: [], secrets: [], issuers: [], uniqIds: [] }
+	currentCodesData = { names: [], secrets: [], issuers: [], uniqIds: [], notes: [], noteTitles: [] }
 	activeCodeRefs = []
 	saveText = ""
 	searchQuery = []
@@ -1888,7 +1906,9 @@ const executeLoadCodes = async () => {
 const saveUpdatedVault = async (data: LibImportFile) => {
 	let newVaultText = ""
 	for (let i = 0; i < data.names.length; i++) {
-		newVaultText += `\nName:   ${data.names[i]} \nSecret: ${data.secrets[i]} \nIssuer: ${data.issuers[i]} \nType:   OTP_TOTP\n`
+		const noteTitle = data.noteTitles?.[i] ? ` \nNoteTitle: ${data.noteTitles[i]}` : ""
+		const note = data.notes?.[i] ? ` \nNote:   ${data.notes[i]}` : ""
+		newVaultText += `\nName:   ${data.names[i]} \nSecret: ${data.secrets[i]} \nIssuer: ${data.issuers[i]} \nType:   OTP_TOTP${noteTitle}${note}\n`
 	}
 	const currentSettings = getSettings()
 	if (data.names.length === 0) {
@@ -1926,6 +1946,8 @@ export const deleteCodeAtIndex = async (index: number) => {
 	currentCodesData.secrets.splice(index, 1)
 	currentCodesData.issuers.splice(index, 1)
 	if (currentCodesData.uniqIds) currentCodesData.uniqIds.splice(index, 1)
+	if (currentCodesData.notes) currentCodesData.notes.splice(index, 1)
+	if (currentCodesData.noteTitles) currentCodesData.noteTitles.splice(index, 1)
 
 	await saveUpdatedVault(currentCodesData)
 	showToast(language.common.delete + " " + language.common.confirm, "success")
@@ -1933,13 +1955,24 @@ export const deleteCodeAtIndex = async (index: number) => {
 	search()
 }
 
-export const editCodeAtIndex = async (index: number, newIssuer: string, newName: string, newSecret?: string) => {
+export const editCodeAtIndex = async (
+	index: number,
+	newIssuer: string,
+	newName: string,
+	newSecret?: string,
+	newNoteTitle?: string,
+	newNote?: string
+) => {
 	if (!currentCodesData || currentCodesData.names[index] === undefined) return
 	const oldSecret = (currentCodesData.secrets[index] || "").replace(/[\s-]+/g, "").toUpperCase()
 	const cleanIssuer = newIssuer.trim()
 	const cleanName = cleanAccountName(newName.trim(), cleanIssuer)
 	currentCodesData.issuers[index] = cleanIssuer
 	currentCodesData.names[index] = cleanName
+	if (!currentCodesData.notes) currentCodesData.notes = []
+	if (!currentCodesData.noteTitles) currentCodesData.noteTitles = []
+	currentCodesData.noteTitles[index] = (newNoteTitle || "").trim()
+	currentCodesData.notes[index] = (newNote || "").trim()
 	if (newSecret && newSecret.trim() !== "") {
 		const formattedNewSecret = newSecret.replace(/[\s-]+/g, "").toUpperCase()
 		if (oldSecret !== formattedNewSecret && pinnedSecrets.has(oldSecret)) {

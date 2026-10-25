@@ -74,6 +74,7 @@ export const localeTH = {
 		"locked": "ล็อกแอปพลิเคชันเรียบร้อยแล้ว"
 	},
 	"codes": {
+		"note": "โน๊ต",
 		"importCodes": "นำเข้ารหัส 2FA ของคุณ",
 		"importCodesText": "นำเข้ารหัส 2FA ที่มีอยู่แล้วของคุณในหน้านำเข้า",
 		"importCodesButton": "นำเข้ารหัส",
@@ -318,6 +319,10 @@ export const localeTH = {
 		"saveSuccess": "บันทึกการเปลี่ยนแปลงรหัส 2FA เรียบร้อยแล้ว",
 		"invalidSecret": "คีย์ลับต้องเป็นรูปแบบ Base32 (A-Z, 2-7) ที่ถูกต้อง",
 		"copySecretSuccess": "คัดลอกคีย์ลับเรียบร้อยแล้ว",
+		"note": "โน๊ต",
+		"noteField": "โน๊ต / รหัสผ่าน (ไม่บังคับ)",
+		"noteTitlePlaceholder": "ชื่อโน๊ต เช่น รหัสผ่าน",
+		"notePlaceholder": "ใส่รหัสผ่าน หรือข้อความช่วยจำ",
 		"dialog": {
 			"saveChanges": "คุณต้องการบันทึกการเปลี่ยนแปลงหรือไม่?",
 			"deleteCode": "คุณแน่ใจหรือไม่ว่าต้องการลบรหัสนี้?"

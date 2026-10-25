@@ -62,7 +62,6 @@
 		"@undecaf/barcode-detector-polyfill": "^0.9.16",
 		"@undecaf/zbar-wasm": "^0.9.13",
 		"otpauth": "^8.0.3",
-		"posthog-js": "^1.407.3",
 		"qrcode-generator": "^1.4.4"
 	}
 }

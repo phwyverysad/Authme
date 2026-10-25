@@ -133,7 +133,10 @@
 	let editIssuer = ""
 	let editName = ""
 	let editSecret = ""
+	let editNoteTitle = ""
+	let editNote = ""
 	let showEditSecret = false
+	let showEditNote = false
 	let editError = ""
 	let isSavingEdit = false
 	let dynamicBrandLogoUrl = ""
@@ -145,7 +148,10 @@
 		editIssuer = initialIssuer
 		editName = cleanAccountName($activeEditModal.name || "", initialIssuer)
 		editSecret = $activeEditModal.secret || ""
+		editNoteTitle = $activeEditModal.noteTitle || ""
+		editNote = $activeEditModal.note || ""
 		showEditSecret = false
+		showEditNote = false
 		editError = ""
 		isSavingEdit = false
 		dynamicBrandLogoUrl = ""
@@ -189,7 +195,14 @@
 		showToast(language.edit?.copySecretSuccess || "Secret key copied to clipboard", "success")
 	}
 
-		const saveEditModal = async () => {
+	const copyEditNote = async () => {
+		if (!editNote) return
+		await clipboard.writeText(editNote)
+		const label = editNoteTitle.trim() || language.codes?.note || "Note"
+		showToast(`${label} ${language.common?.copied || "copied to clipboard"}`, "success")
+	}
+
+	const saveEditModal = async () => {
 		if (!$activeEditModal || isSavingEdit) return
 		const idx = $activeEditModal.index
 		const newIssuer = editIssuer.trim()
@@ -204,7 +217,7 @@
 		isSavingEdit = true
 		editError = ""
 		try {
-			await editCodeAtIndex(idx, newIssuer, newName, newSecret)
+			await editCodeAtIndex(idx, newIssuer, newName, newSecret, editNoteTitle, editNote)
 			activeEditModal.set(null)
 		} catch (err) {
 			console.error("Save edit error:", err)
@@ -1037,6 +1050,78 @@
 					{#if editSecret && !isSecretValid}
 						<p class="text-xs text-rose-500 mt-1 font-medium">{language.edit?.invalidSecret || "คีย์ลับต้องเป็นรูปแบบ Base32 (A-Z, 2-7)"}</p>
 					{/if}
+				</div>
+
+				<!-- Field 4: Note / Password (โน๊ต / รหัสผ่าน) -->
+				<div class="pt-1">
+					<div class="flex items-center justify-between mb-1.5">
+						<label for="edit-note" class="block text-xs font-medium text-slate-600 dark:text-slate-300">
+							{language.edit?.noteField || "โน๊ต / รหัสผ่าน (ไม่บังคับ)"}
+						</label>
+						{#if editNote}
+							<button
+								type="button"
+								on:click={copyEditNote}
+								class="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 cursor-pointer"
+							>
+								<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+								<span>{language.common?.copy || "คัดลอก"}</span>
+							</button>
+						{/if}
+					</div>
+
+					<div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+						<div class="sm:col-span-1">
+							<input
+								id="edit-note-title"
+								type="text"
+								bind:value={editNoteTitle}
+								placeholder={language.edit?.noteTitlePlaceholder || "ชื่อโน๊ต เช่น รหัสผ่าน"}
+								class="w-full px-3 py-2.5 rounded-xl border text-xs sm:text-sm transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500
+									bg-slate-50 dark:bg-slate-800/70 border-slate-200 dark:border-slate-700/80 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500"
+							/>
+						</div>
+						<div class="sm:col-span-2 relative">
+							<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+								<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+									<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+								</svg>
+							</div>
+
+							{#if showEditNote}
+								<input
+									id="edit-note"
+									type="text"
+									bind:value={editNote}
+									placeholder={language.edit?.notePlaceholder || "ใส่รหัสผ่าน หรือข้อความช่วยจำ"}
+									class="w-full pl-9 pr-9 py-2.5 rounded-xl border text-xs sm:text-sm transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500
+										bg-slate-50 dark:bg-slate-800/70 border-slate-200 dark:border-slate-700/80 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500"
+								/>
+							{:else}
+								<input
+									id="edit-note"
+									type="password"
+									bind:value={editNote}
+									placeholder={language.edit?.notePlaceholder || "ใส่รหัสผ่าน หรือข้อความช่วยจำ"}
+									class="w-full pl-9 pr-9 py-2.5 rounded-xl border text-xs sm:text-sm transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500
+										bg-slate-50 dark:bg-slate-800/70 border-slate-200 dark:border-slate-700/80 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500"
+								/>
+							{/if}
+
+							<button
+								type="button"
+								on:click={() => (showEditNote = !showEditNote)}
+								class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+								title={showEditNote ? (language.dialogs?.hideSecret || "Hide") : (language.dialogs?.showSecret || "Show")}
+							>
+								{#if showEditNote}
+									<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
+								{:else}
+									<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+								{/if}
+							</button>
+						</div>
+					</div>
 				</div>
 
 				<!-- Clean Action Buttons -->

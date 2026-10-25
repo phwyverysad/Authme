@@ -27,6 +27,8 @@ export interface ContextMenuItem {
 	token: string
 	secret: string
 	pinned?: boolean
+	note?: string
+	noteTitle?: string
 }
 
 export interface EditModalItem {
@@ -34,6 +36,8 @@ export interface EditModalItem {
 	issuer: string
 	name: string
 	secret?: string
+	note?: string
+	noteTitle?: string
 }
 
 export interface QrModalItem {

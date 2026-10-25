@@ -3,7 +3,7 @@
 	import { fade, scale } from "svelte/transition"
 	import { getLanguage, currentLanguage } from "@utils/language"
 	import qrcode from "qrcode-generator"
-	import { onMount, onDestroy } from "svelte"
+	import { onMount, onDestroy, tick } from "svelte"
 	import * as clipboard from "@tauri-apps/plugin-clipboard-manager"
 	import { cleanAccountName } from "../utils/icons"
 
@@ -17,16 +17,34 @@
 
 	$: if ($activeContextMenu) {
 		openedAt = Date.now()
-		const pad = 12
-		const menuWidth = 220
-		const menuHeight = 210
-		const winW = typeof window !== "undefined" ? window.innerWidth : 1000
-		const winH = typeof window !== "undefined" ? window.innerHeight : 700
+		repositionMenu()
+	}
 
-		posX = Math.min($activeContextMenu.x, winW - menuWidth - pad)
-		posY = Math.min($activeContextMenu.y, winH - menuHeight - pad)
-		if (posX < pad) posX = pad
-		if (posY < pad) posY = pad
+	const repositionMenu = async () => {
+		await tick()
+		const pad = 12
+		const winW = document.documentElement.clientWidth || window.innerWidth || 1000
+		const winH = document.documentElement.clientHeight || window.innerHeight || 700
+
+		const rect = menuEl?.getBoundingClientRect()
+		const menuW = rect?.width || 224
+		const menuH = rect?.height || 260
+
+		let x = $activeContextMenu?.x ?? pad
+		let y = $activeContextMenu?.y ?? pad
+
+		if (x + menuW > winW - pad) {
+			x = Math.max(pad, winW - menuW - pad)
+		}
+		if (x < pad) x = pad
+
+		if (y + menuH > winH - pad) {
+			y = Math.max(pad, winH - menuH - pad)
+		}
+		if (y < pad) y = pad
+
+		posX = x
+		posY = y
 	}
 
 	const closeMenu = () => {
@@ -35,7 +53,6 @@
 
 	const handleOutside = (e: MouseEvent | PointerEvent) => {
 		if (!$activeContextMenu) return
-		// Don't close within 60ms to prevent the triggering pointerdown from immediately closing
 		if (Date.now() - openedAt < 60) return
 		if (menuEl && !menuEl.contains(e.target as Node)) {
 			closeMenu()
@@ -60,6 +77,15 @@
 		}
 	}
 
+	const handleCopyNote = async () => {
+		if (!$activeContextMenu || !$activeContextMenu.note) return
+		const item = $activeContextMenu
+		closeMenu()
+		await clipboard.writeText(item.note)
+		const label = item.noteTitle?.trim() || language.codes?.note || "Note"
+		showToast(`${label} ${language.common?.copied || "copied to clipboard"}`, "success")
+	}
+
 	const handleTogglePin = () => {
 		if (!$activeContextMenu) return
 		const item = $activeContextMenu
@@ -76,6 +102,8 @@
 			issuer: item.issuer,
 			name: item.name,
 			secret: item.secret,
+			note: item.note,
+			noteTitle: item.noteTitle,
 		})
 	}
 
@@ -156,13 +184,13 @@
 </script>
 
 {#if $activeContextMenu}
-	<!-- Custom Floating Context Menu (No blocking full-screen backdrop, allowing seamless right-clicks on other cards) -->
+	<!-- Custom Floating Context Menu (Authme Standard Floating Style) -->
 	<div
 		bind:this={menuEl}
 		in:scale={{ start: 0.95, duration: 150 }}
 		out:fade={{ duration: 100 }}
 		style="left: {posX}px; top: {posY}px;"
-		class="fixed z-[99999] w-56 rounded-2xl p-1.5 shadow-2xl backdrop-blur-2xl border select-none
+		class="fixed z-[99999] w-56 max-w-[calc(100vw-24px)] rounded-2xl p-1.5 shadow-2xl backdrop-blur-2xl border select-none
 			bg-white/95 text-slate-800 border-slate-200/90 shadow-slate-900/10
 			dark:bg-[#0f172a]/95 dark:text-slate-100 dark:border-slate-700/80 dark:shadow-[0_20px_40px_-10px_rgba(0,0,0,0.7)] dark:ring-1 dark:ring-white/10"
 	>
@@ -170,19 +198,19 @@
 		<button
 			type="button"
 			on:click={handleCopy}
-			class="flex w-full items-center justify-between px-2.5 py-2 rounded-xl font-medium text-sm transition-all duration-150 group
-				hover:bg-slate-100 dark:hover:bg-slate-800/90 hover:text-slate-900 dark:hover:text-white active:scale-[0.98]"
+			class="flex w-full items-center justify-between px-2.5 py-2 rounded-xl font-medium text-sm transition-all duration-150 group/menuitem
+				hover:bg-slate-100 dark:hover:bg-slate-800/90 hover:text-slate-900 dark:hover:text-white active:scale-[0.98] cursor-pointer"
 		>
 			<div class="flex items-center gap-2.5">
-				<div class="w-7 h-7 rounded-lg flex items-center justify-center bg-slate-100/90 dark:bg-slate-800/90 text-slate-400 group-hover:text-sky-500 dark:group-hover:text-sky-400 group-hover:bg-sky-50 dark:group-hover:bg-slate-700/80 transition-colors">
+				<div class="w-7 h-7 rounded-lg flex items-center justify-center bg-slate-100/90 dark:bg-slate-800/90 text-slate-400 group-hover/menuitem:text-sky-500 dark:group-hover/menuitem:text-sky-400 group-hover/menuitem:bg-sky-50 dark:group-hover/menuitem:bg-sky-500/20 group-hover/menuitem:ring-1 group-hover/menuitem:ring-sky-500/30 transition-all duration-150">
 					<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
 						<rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
 						<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
 					</svg>
 				</div>
-				<span class="text-slate-700 dark:text-slate-200 group-hover:text-slate-900 dark:group-hover:text-white">{language.common?.copy || "Copy"}</span>
+				<span class="text-slate-700 dark:text-slate-200 group-hover/menuitem:text-slate-900 dark:group-hover/menuitem:text-white">{language.common?.copy || "Copy"}</span>
 			</div>
-			<span class="text-[11px] font-mono text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-300">Ctrl+C</span>
+			<span class="text-[11px] font-mono text-slate-400 dark:text-slate-500 group-hover/menuitem:text-slate-600 dark:group-hover/menuitem:text-slate-300">Ctrl+C</span>
 		</button>
 
 		<!-- Copy Account / Email Action -->
@@ -190,17 +218,36 @@
 			<button
 				type="button"
 				on:click={handleCopyAccount}
-				class="flex w-full items-center gap-2.5 px-2.5 py-2 rounded-xl font-medium text-sm transition-all duration-150 group
-					hover:bg-slate-100 dark:hover:bg-slate-800/90 hover:text-slate-900 dark:hover:text-white active:scale-[0.98]"
+				class="flex w-full items-center gap-2.5 px-2.5 py-2 rounded-xl font-medium text-sm transition-all duration-150 group/menuitem
+					hover:bg-slate-100 dark:hover:bg-slate-800/90 hover:text-slate-900 dark:hover:text-white active:scale-[0.98] cursor-pointer"
 			>
-				<div class="w-7 h-7 rounded-lg flex items-center justify-center bg-slate-100/90 dark:bg-slate-800/90 text-slate-400 group-hover:text-sky-500 dark:group-hover:text-sky-400 group-hover:bg-sky-50 dark:group-hover:bg-slate-700/80 transition-colors">
+				<div class="w-7 h-7 rounded-lg flex items-center justify-center bg-slate-100/90 dark:bg-slate-800/90 text-slate-400 group-hover/menuitem:text-sky-500 dark:group-hover/menuitem:text-sky-400 group-hover/menuitem:bg-sky-50 dark:group-hover/menuitem:bg-sky-500/20 group-hover/menuitem:ring-1 group-hover/menuitem:ring-sky-500/30 transition-all duration-150">
 					<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
 						<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
 						<circle cx="12" cy="7" r="4" />
 					</svg>
 				</div>
-				<span class="text-slate-700 dark:text-slate-200 group-hover:text-slate-900 dark:group-hover:text-white truncate">
+				<span class="text-slate-700 dark:text-slate-200 group-hover/menuitem:text-slate-900 dark:group-hover/menuitem:text-white truncate">
 					{language.codes?.copyAccount || "Copy Account / Email"}
+				</span>
+			</button>
+		{/if}
+
+		<!-- Copy Note Action (if note exists) -->
+		{#if $activeContextMenu.note}
+			<button
+				type="button"
+				on:click={handleCopyNote}
+				class="flex w-full items-center gap-2.5 px-2.5 py-2 rounded-xl font-medium text-sm transition-all duration-150 group/menuitem
+					hover:bg-slate-100 dark:hover:bg-slate-800/90 hover:text-slate-900 dark:hover:text-white active:scale-[0.98] cursor-pointer"
+			>
+				<div class="w-7 h-7 rounded-lg flex items-center justify-center bg-slate-100/90 dark:bg-slate-800/90 text-slate-400 group-hover/menuitem:text-sky-500 dark:group-hover/menuitem:text-sky-400 group-hover/menuitem:bg-sky-50 dark:group-hover/menuitem:bg-sky-500/20 group-hover/menuitem:ring-1 group-hover/menuitem:ring-sky-500/30 transition-all duration-150">
+					<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+						<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+					</svg>
+				</div>
+				<span class="text-slate-700 dark:text-slate-200 group-hover/menuitem:text-slate-900 dark:group-hover/menuitem:text-white truncate">
+					{language.common?.copy || "คัดลอก"} {$activeContextMenu.noteTitle?.trim() || language.codes?.note || "โน๊ต"}
 				</span>
 			</button>
 		{/if}
@@ -209,26 +256,26 @@
 		<button
 			type="button"
 			on:click={handleEdit}
-			class="flex w-full items-center gap-2.5 px-2.5 py-2 rounded-xl font-medium text-sm transition-all duration-150 group
-				hover:bg-slate-100 dark:hover:bg-slate-800/90 hover:text-slate-900 dark:hover:text-white active:scale-[0.98]"
+			class="flex w-full items-center gap-2.5 px-2.5 py-2 rounded-xl font-medium text-sm transition-all duration-150 group/menuitem
+				hover:bg-slate-100 dark:hover:bg-slate-800/90 hover:text-slate-900 dark:hover:text-white active:scale-[0.98] cursor-pointer"
 		>
-			<div class="w-7 h-7 rounded-lg flex items-center justify-center bg-slate-100/90 dark:bg-slate-800/90 text-slate-400 group-hover:text-sky-500 dark:group-hover:text-sky-400 group-hover:bg-sky-50 dark:group-hover:bg-slate-700/80 transition-colors">
+			<div class="w-7 h-7 rounded-lg flex items-center justify-center bg-slate-100/90 dark:bg-slate-800/90 text-slate-400 group-hover/menuitem:text-sky-500 dark:group-hover/menuitem:text-sky-400 group-hover/menuitem:bg-sky-50 dark:group-hover/menuitem:bg-sky-500/20 group-hover/menuitem:ring-1 group-hover/menuitem:ring-sky-500/30 transition-all duration-150">
 				<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
 					<path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
 					<path d="m15 5 4 4" />
 				</svg>
 			</div>
-			<span class="text-slate-700 dark:text-slate-200 group-hover:text-slate-900 dark:group-hover:text-white">{language.common?.edit || "Edit"}</span>
+			<span class="text-slate-700 dark:text-slate-200 group-hover/menuitem:text-slate-900 dark:group-hover/menuitem:text-white">{language.common?.edit || "Edit"}</span>
 		</button>
 
 		<!-- Display QR Action -->
 		<button
 			type="button"
 			on:click={handleDisplayQr}
-			class="flex w-full items-center gap-2.5 px-2.5 py-2 rounded-xl font-medium text-sm transition-all duration-150 group
-				hover:bg-slate-100 dark:hover:bg-slate-800/90 hover:text-slate-900 dark:hover:text-white active:scale-[0.98]"
+			class="flex w-full items-center gap-2.5 px-2.5 py-2 rounded-xl font-medium text-sm transition-all duration-150 group/menuitem
+				hover:bg-slate-100 dark:hover:bg-slate-800/90 hover:text-slate-900 dark:hover:text-white active:scale-[0.98] cursor-pointer"
 		>
-			<div class="w-7 h-7 rounded-lg flex items-center justify-center bg-slate-100/90 dark:bg-slate-800/90 text-slate-400 group-hover:text-sky-500 dark:group-hover:text-sky-400 group-hover:bg-sky-50 dark:group-hover:bg-slate-700/80 transition-colors">
+			<div class="w-7 h-7 rounded-lg flex items-center justify-center bg-slate-100/90 dark:bg-slate-800/90 text-slate-400 group-hover/menuitem:text-sky-500 dark:group-hover/menuitem:text-sky-400 group-hover/menuitem:bg-sky-50 dark:group-hover/menuitem:bg-sky-500/20 group-hover/menuitem:ring-1 group-hover/menuitem:ring-sky-500/30 transition-all duration-150">
 				<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
 					<rect x="3" y="3" width="7" height="7" rx="1" />
 					<rect x="14" y="3" width="7" height="7" rx="1" />
@@ -236,17 +283,17 @@
 					<rect x="3" y="14" width="7" height="7" rx="1" />
 				</svg>
 			</div>
-			<span class="text-slate-700 dark:text-slate-200 group-hover:text-slate-900 dark:group-hover:text-white">{language.codes?.displayQr || "Display QR code"}</span>
+			<span class="text-slate-700 dark:text-slate-200 group-hover/menuitem:text-slate-900 dark:group-hover/menuitem:text-white">{language.codes?.displayQr || "Display QR code"}</span>
 		</button>
 
 		<!-- Toggle Pin / Star Action -->
 		<button
 			type="button"
 			on:click={handleTogglePin}
-			class="flex w-full items-center gap-2.5 px-2.5 py-2 rounded-xl font-medium text-sm transition-all duration-150 group
-				hover:bg-slate-100 dark:hover:bg-slate-800/90 hover:text-slate-900 dark:hover:text-white active:scale-[0.98]"
+			class="flex w-full items-center gap-2.5 px-2.5 py-2 rounded-xl font-medium text-sm transition-all duration-150 group/menuitem
+				hover:bg-slate-100 dark:hover:bg-slate-800/90 hover:text-slate-900 dark:hover:text-white active:scale-[0.98] cursor-pointer"
 		>
-			<div class="w-7 h-7 rounded-lg flex items-center justify-center bg-slate-100/90 dark:bg-slate-800/90 text-slate-400 group-hover:text-amber-500 dark:group-hover:text-amber-400 group-hover:bg-amber-50 dark:group-hover:bg-slate-700/80 transition-colors">
+			<div class="w-7 h-7 rounded-lg flex items-center justify-center bg-slate-100/90 dark:bg-slate-800/90 text-slate-400 group-hover/menuitem:text-amber-500 dark:group-hover/menuitem:text-amber-400 group-hover/menuitem:bg-amber-50 dark:group-hover/menuitem:bg-amber-500/20 group-hover/menuitem:ring-1 group-hover/menuitem:ring-amber-500/30 transition-all duration-150">
 				{#if $activeContextMenu.pinned}
 					<svg class="w-4 h-4 text-amber-500 fill-amber-500" viewBox="0 0 24 24">
 						<path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
@@ -257,7 +304,7 @@
 					</svg>
 				{/if}
 			</div>
-			<span class="text-slate-700 dark:text-slate-200 group-hover:text-slate-900 dark:group-hover:text-white">
+			<span class="text-slate-700 dark:text-slate-200 group-hover/menuitem:text-slate-900 dark:group-hover/menuitem:text-white">
 				{$activeContextMenu.pinned ? (language.codes?.unpin || "Unpin from top") : (language.codes?.pinToTop || "Pin to top")}
 			</span>
 		</button>
@@ -268,17 +315,17 @@
 		<button
 			type="button"
 			on:click={handleDelete}
-			class="flex w-full items-center gap-2.5 px-2.5 py-2 rounded-xl font-medium text-sm transition-all duration-150 group
-				hover:bg-rose-500/10 dark:hover:bg-rose-500/15 active:scale-[0.98]"
+			class="flex w-full items-center gap-2.5 px-2.5 py-2 rounded-xl font-medium text-sm transition-all duration-150 group/menuitem
+				hover:bg-rose-500/10 dark:hover:bg-rose-500/15 active:scale-[0.98] cursor-pointer"
 		>
-			<div class="w-7 h-7 rounded-lg flex items-center justify-center bg-slate-100/90 dark:bg-slate-800/90 text-slate-400 group-hover:text-rose-500 dark:group-hover:text-rose-400 group-hover:bg-rose-50 dark:group-hover:bg-rose-950/40 transition-colors">
+			<div class="w-7 h-7 rounded-lg flex items-center justify-center bg-slate-100/90 dark:bg-slate-800/90 text-slate-400 group-hover/menuitem:text-rose-500 dark:group-hover/menuitem:text-rose-400 group-hover/menuitem:bg-rose-50 dark:group-hover/menuitem:bg-rose-950/40 group-hover/menuitem:ring-1 group-hover/menuitem:ring-rose-500/30 transition-all duration-150">
 				<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
 					<path d="M3 6h18" />
 					<path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
 					<path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
 				</svg>
 			</div>
-			<span class="text-slate-700 dark:text-slate-200 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors">{language.common?.delete || "Delete"}</span>
+			<span class="text-slate-700 dark:text-slate-200 group-hover/menuitem:text-rose-600 dark:group-hover/menuitem:text-rose-400 transition-colors">{language.common?.delete || "Delete"}</span>
 		</button>
 	</div>
 {/if}

@@ -714,6 +714,15 @@ async fn create_embedded_webview(
                         const m = str.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{{2,}}/);
                         if (m) return m[0].toLowerCase();
                     }}
+
+                    if (window.location.hostname.includes('icloud.com')) {{
+                        const icloudEl = document.querySelector('[data-test-id*="account-name"], [class*="AccountName"], [class*="account-menu"], [aria-label*="@"], span[title*="@"]');
+                        if (icloudEl) {{
+                            const str = icloudEl.getAttribute('title') || icloudEl.getAttribute('aria-label') || icloudEl.textContent || '';
+                            const m = str.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{{2,}}/);
+                            if (m) return m[0].toLowerCase();
+                        }}
+                    }}
                 }} catch(e) {{}}
                 return null;
             }}
@@ -725,6 +734,7 @@ async fn create_embedded_webview(
                         currentUrl.includes('accounts.google.com') ||
                         currentUrl.includes('login.live.com') ||
                         currentUrl.includes('login.microsoftonline.com') ||
+                        currentUrl.includes('go.microsoft.com') ||
                         currentUrl.includes('login.yahoo.com') ||
                         currentUrl.includes('account.proton.me/login') ||
                         currentUrl.includes('signin') ||
@@ -743,7 +753,10 @@ async fn create_embedded_webview(
                     );
 
                     if (isInbox) {{
-                        const found = extractEmail();
+                        let found = extractEmail();
+                        if (!found && window.location.hostname.includes('icloud.com')) {{
+                            found = 'icloud@icloud.com';
+                        }}
                         if (found && !document.title.includes('[AUTHME_INBOX:')) {{
                             document.title = document.title + ' [AUTHME_INBOX:' + found + ']';
                         }}
@@ -757,6 +770,89 @@ async fn create_embedded_webview(
             }}, true);
             window.addEventListener('contextmenu', function(e) {{
                 e.preventDefault();
+            }}, true);
+
+            function isInternalEmailServiceUrl(url) {{
+                if (!url) return false;
+                try {{
+                    const parsed = new URL(url, window.location.href);
+                    const host = parsed.hostname.toLowerCase();
+                    
+                    if (host === 'mail.google.com' || host === 'accounts.google.com' || host === 'myaccount.google.com' || host === 'contacts.google.com') return true;
+                    if (host.endsWith('.outlook.com') || host === 'outlook.com' || host.endsWith('.live.com') || host.endsWith('.office.com') || host.endsWith('.office365.com') || host.endsWith('.microsoftonline.com') || host.endsWith('.microsoft.com') || host === 'go.microsoft.com') return true;
+                    if (host.endsWith('.yahoo.com') || host === 'yahoo.com') return true;
+                    if (host.endsWith('.proton.me') || host === 'proton.me') return true;
+                    if (host.endsWith('.icloud.com') || host === 'icloud.com' || host.endsWith('.apple.com') || host === 'apple.com') return true;
+                    
+                    return false;
+                }} catch(e) {{
+                    return false;
+                }}
+            }}
+
+            function triggerOpenExternalUrl(url) {{
+                if (!url || typeof url !== 'string') return;
+                try {{
+                    let clean = url.trim();
+                    if (clean.includes('google.com/url?') || clean.includes('google.co.th/url?')) {{
+                        try {{
+                            const u = new URL(clean);
+                            const q = u.searchParams.get('q') || u.searchParams.get('url');
+                            if (q) clean = q;
+                        }} catch(e) {{}}
+                    }}
+                    if (clean.includes('safelinks.protection.outlook.com/?url=')) {{
+                        try {{
+                            const u = new URL(clean);
+                            const q = u.searchParams.get('url');
+                            if (q) clean = q;
+                        }} catch(e) {{}}
+                    }}
+                    if (!clean.startsWith('http://') && !clean.startsWith('https://')) return;
+
+                    document.title = document.title.replace(/\s*\[AUTHME_OPEN_URL:[^\]]+\]/g, '') + ' [AUTHME_OPEN_URL:' + clean + ']';
+                    setTimeout(function() {{
+                        try {{
+                            document.title = document.title.replace(/\s*\[AUTHME_OPEN_URL:[^\]]+\]/g, '');
+                        }} catch(e) {{}}
+                    }}, 120);
+                }} catch(err) {{}}
+            }}
+
+            // Intercept window.open
+            const originalWindowOpen = window.open;
+            window.open = function(url, target, features) {{
+                if (url && typeof url === 'string') {{
+                    try {{
+                        const fullUrl = new URL(url, window.location.href).href;
+                        if (target === '_blank' || !isInternalEmailServiceUrl(fullUrl)) {{
+                            triggerOpenExternalUrl(fullUrl);
+                            return null;
+                        }}
+                    }} catch(e) {{}}
+                }}
+                return originalWindowOpen.apply(this, arguments);
+            }};
+
+            // Intercept link clicks across webmail (Gmail, Outlook, Yahoo, Proton, iCloud)
+            document.addEventListener('click', function(e) {{
+                const a = e.target && e.target.closest('a');
+                if (!a) return;
+                const rawHref = a.getAttribute('href');
+                if (!rawHref || rawHref.startsWith('#') || rawHref.startsWith('javascript:')) return;
+
+                try {{
+                    const targetUrl = new URL(a.href, window.location.href).href;
+                    const targetAttr = (a.getAttribute('target') || '').toLowerCase();
+                    const isTargetBlank = targetAttr === '_blank' || targetAttr === '_new';
+                    const inMessageBody = Boolean(a.closest('.a3s, [data-message-id], .ItemPartView, .ReadingPaneContainer, [role="article"], .message-view, [class*="messageBody"]'));
+
+                    if (isTargetBlank || inMessageBody || !isInternalEmailServiceUrl(targetUrl)) {{
+                        e.preventDefault();
+                        e.stopPropagation();
+                        triggerOpenExternalUrl(targetUrl);
+                    }}
+                }} catch(err) {{}}
             }}, true);
 
             // Handle Mouse 4 (Back) and Mouse 5 (Forward/Back) inside the webview
@@ -825,6 +921,17 @@ async fn create_embedded_webview(
         .user_agent(user_agent)
         .initialization_script(init_script)
         .on_document_title_changed(move |_wv, title| {
+            // Handle open external url request from webview
+            if let Some(start_pos) = title.find("[AUTHME_OPEN_URL:") {
+                let url_start = start_pos + 17;
+                if let Some(end_pos) = title[url_start..].find(']') {
+                    let raw_url = &title[url_start..url_start + end_pos];
+                    if !raw_url.is_empty() {
+                        let _ = open_external_url(app_for_title.clone(), raw_url.to_string());
+                    }
+                }
+            }
+
             // 0. Handle navigation back signal from webview
             if title.contains("[AUTHME_NAV_BACK]") {
                 let _ = app_for_title.emit("mail:request-exit-dashboard", serde_json::json!({}));
@@ -867,6 +974,7 @@ async fn create_embedded_webview(
             let is_login_page = page_url.contains("accounts.google.com")
                 || page_url.contains("login.live.com")
                 || page_url.contains("login.microsoftonline.com")
+                || page_url.contains("go.microsoft.com")
                 || page_url.contains("login.yahoo.com")
                 || page_url.contains("account.proton.me/login")
                 || page_url.contains("signin")
@@ -884,6 +992,26 @@ async fn create_embedded_webview(
             );
 
             if is_inbox {
+                if is_login_session(&id_for_page) && page_url.contains("icloud.com/mail") {
+                    let app_clone = app_for_page.clone();
+                    let id_clone = id_for_page.clone();
+                    let url_clone = page_url.to_string();
+                    std::thread::spawn(move || {
+                        std::thread::sleep(std::time::Duration::from_millis(1500));
+                        if is_login_session(&id_clone) {
+                            let em = get_detected_email(&id_clone).unwrap_or_else(|| "icloud@icloud.com".to_string());
+                            let _ = app_clone.emit(
+                                "mail:login-success",
+                                serde_json::json!({
+                                    "id": id_clone,
+                                    "email": em,
+                                    "url": url_clone
+                                }),
+                            );
+                            unregister_login_session(&id_clone);
+                        }
+                    });
+                }
                 let _ = wv.eval(r#"
                     (function() {
                         const email = (function() {
@@ -1798,6 +1926,16 @@ mod tests {
 
         let plain = active_mc.decrypt_base64_to_string(&cipher).unwrap();
         assert_eq!(plain, secret);
+    }
+
+    #[test]
+    fn test_open_external_url_tag_extraction() {
+        let title = "Gmail - Inbox [AUTHME_OPEN_URL:https://example.com/verify?token=123]";
+        let start_pos = title.find("[AUTHME_OPEN_URL:").unwrap();
+        let url_start = start_pos + 17;
+        let end_pos = title[url_start..].find(']').unwrap();
+        let raw_url = &title[url_start..url_start + end_pos];
+        assert_eq!(raw_url, "https://example.com/verify?token=123");
     }
 }
 

@@ -74,6 +74,7 @@ export const localeEN = {
 		"locked": "Authme has been locked."
 	},
 	"codes": {
+		"note": "Note",
 		"importCodes": "Import your 2FA codes",
 		"importCodesText": "Import your existing 2FA codes on the Import page.",
 		"importCodesButton": "Import codes",
@@ -318,6 +319,10 @@ export const localeEN = {
 		"saveSuccess": "2FA code updated successfully",
 		"invalidSecret": "Secret key must be a valid Base32 string (A-Z, 2-7)",
 		"copySecretSuccess": "Secret key copied to clipboard",
+		"note": "Note",
+		"noteField": "Note / Password (Optional)",
+		"noteTitlePlaceholder": "Note title (e.g. Password)",
+		"notePlaceholder": "Enter password or note",
 		"dialog": {
 			"saveChanges": "Do you want to save your changes?",
 			"deleteCode": "Are you sure you want to delete this code?"

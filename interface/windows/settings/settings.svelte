@@ -22,15 +22,6 @@
 			</div>
 		</div>
 
-		<div class="transparent-800 mb-4 flex w-full flex-row items-center justify-between rounded-xl p-4 sm:p-5 text-left">
-			<div>
-				<h2>{language.settings.optionalAnalytics}</h2>
-				<h3>{language.settings.optionalAnalyticsText}</h3>
-			</div>
-			<div class="ml-4 sm:ml-8 md:ml-12 flex-shrink-0 flex gap-3">
-				<Toggle bind:checked={$settings.settings.optionalAnalytics} />
-			</div>
-		</div>
 
 		<div class="transparent-800 mb-4 flex w-full flex-row items-center justify-between rounded-xl p-4 sm:p-5 text-left">
 			<div>

@@ -85,13 +85,13 @@ export const PROVIDER_CONFIGS: Record<
 	},
 	outlook: {
 		name: "Outlook / Hotmail",
-		url: "https://outlook.live.com/mail/",
+		url: "https://go.microsoft.com/fwlink/p/?LinkID=2125442&deeplink=mail%2F&sessionId=72d4aaf5-8238-437b-ab37-ca0393b5dbde",
 		color: "#0078d4",
 		bg: "linear-gradient(135deg, #0078d4 0%, #005a9e 100%)",
 	},
 	yahoo: {
 		name: "Yahoo Mail",
-		url: "https://mail.yahoo.com",
+		url: "https://login.yahoo.com/?src=ym-oasis&pspid=1197802296&activity=header-signin",
 		color: "#6001d2",
 		bg: "linear-gradient(135deg, #6001d2 0%, #4a00a0 100%)",
 	},
@@ -372,9 +372,9 @@ export function getProviderLoginUrl(provider: string, customUrl?: string): strin
 		case "gmail":
 			return "https://accounts.google.com/ServiceLogin?service=mail&continue=https://mail.google.com/mail/"
 		case "outlook":
-			return "https://outlook.live.com/mail/"
+			return "https://go.microsoft.com/fwlink/p/?LinkID=2125442&deeplink=mail%2F&sessionId=72d4aaf5-8238-437b-ab37-ca0393b5dbde"
 		case "yahoo":
-			return "https://mail.yahoo.com/"
+			return "https://login.yahoo.com/?src=ym-oasis&pspid=1197802296&activity=header-signin"
 		case "proton":
 			return "https://account.proton.me/mail"
 		case "icloud":

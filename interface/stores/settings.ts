@@ -21,7 +21,6 @@ const defaultSettings: LibSettings = {
 		language: 0,
 		launchOnStartup: true,
 		minimizeToTray: true,
-		optionalAnalytics: true,
 		codesDescription: false,
 		blurCodes: false,
 		sortCodes: 0,

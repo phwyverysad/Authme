@@ -9,6 +9,8 @@ declare global {
 		issuers: string[]
 		types?: string[]
 		uniqIds?: string[]
+		notes?: string[]
+		noteTitles?: string[]
 	}
 
 	/** Authme JSON import file options */
@@ -26,6 +28,8 @@ declare global {
 		secret: string
 		issuer: string
 		type?: string
+		noteTitle?: string
+		note?: string
 	}
 
 	interface LibState {
@@ -62,7 +66,7 @@ declare global {
 			language: number
 			launchOnStartup: boolean
 			minimizeToTray: boolean
-			optionalAnalytics: boolean
+			optionalAnalytics?: boolean
 			codesDescription: boolean
 			/** @deprecated Removed in 6.0.0 */
 			blurCodes: boolean
